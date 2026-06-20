@@ -9,7 +9,7 @@ Set GEMINI_API_KEY in .env to use Gemini (free at https://aistudio.google.com/ap
 import logging
 import os
 import re
-from core.config import OPENAI_API_KEY
+from core.config import OPENAI_API_KEY, GEMINI_API_KEY  # config.py calls load_dotenv()
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +54,7 @@ Keep answers concise and helpful.
 
 def _ask_gemini(system_prompt: str, history: list[dict], question: str) -> str:
     """Call Google Gemini API."""
-    gemini_key = os.getenv("GEMINI_API_KEY", "")
+    gemini_key = GEMINI_API_KEY or os.getenv("GEMINI_API_KEY", "")
     if not gemini_key:
         raise ValueError("GEMINI_API_KEY not set")
 
@@ -121,7 +121,7 @@ def ask_chatbot(messages: list[dict], question: str, articles: list[dict], topic
     system_prompt = build_system_prompt(articles, topic)
     history_for_llm = messages[-(MAX_HISTORY_TURNS * 2):]
 
-    gemini_key = os.getenv("GEMINI_API_KEY", "")
+    gemini_key = GEMINI_API_KEY or os.getenv("GEMINI_API_KEY", "")
     openai_key = OPENAI_API_KEY or os.getenv("OPENAI_API_KEY", "")
 
     # ── Try Gemini first (free tier) ──
