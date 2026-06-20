@@ -168,7 +168,7 @@ with st.sidebar:
     elif openai_key_configured:
         chat_status = "🟡 OpenAI (paid)"
     else:
-        chat_status = "🔴 Not Configured"
+        chat_status = "🟠 Local Mode (no API)"
 
     st.markdown(f"**AI Chatbot**: {chat_status}")
     st.markdown(
@@ -364,9 +364,17 @@ with tab3:
     with chat_header_col1:
         ui.render_section_header("🤖 DigestBot — Ask About Your Topic")
         if has_topic:
+            gemini_key_configured = bool(os.getenv("GEMINI_API_KEY"))
+            openai_key_configured = bool(os.getenv("OPENAI_API_KEY"))
+            if gemini_key_configured:
+                provider_label = "Gemini 2.0 Flash"
+            elif openai_key_configured:
+                provider_label = "gpt-4o-mini"
+            else:
+                provider_label = "Local Keyword Search (no API key)"
             st.caption(
                 f"Context: **{len(st.session_state.topic_articles)} articles** about "
-                f"**{st.session_state.searched_topic}** · Powered by gpt-4o-mini"
+                f"**{st.session_state.searched_topic}** · Powered by {provider_label}"
             )
     with chat_header_col2:
         if st.session_state.chat_history:

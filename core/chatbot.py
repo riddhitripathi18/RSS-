@@ -1,23 +1,26 @@
 """
 Chatbot module - RAG-style QnA over topic-filtered news articles.
-Supports two LLM providers:
-  1. Google Gemini (gemini-1.5-flash) — free tier, used by default
-  2. OpenAI (gpt-4o-mini) — fallback if OPENAI_API_KEY is set and Gemini fails
-
-Set GEMINI_API_KEY in .env to use Gemini (free at https://aistudio.google.com/app/apikey)
+Provider priority:
+  1. Google Gemini (gemini-2.0-flash) — free tier
+  2. OpenAI (gpt-4o-mini) — fallback
+  3. Local keyword search — always works, no API key needed
 """
 import logging
 import os
 import re
+from collections import Counter
 from core.config import OPENAI_API_KEY, GEMINI_API_KEY  # config.py calls load_dotenv()
 
 logger = logging.getLogger(__name__)
 
 OPENAI_CHAT_MODEL = "gpt-4o-mini"
-GEMINI_CHAT_MODEL = "gemini-1.5-flash"  # Free tier: 15 req/min, 1M tokens/day
+GEMINI_CHAT_MODEL = "gemini-2.0-flash"
 MAX_CONTEXT_CHARS_PER_ARTICLE = 300
-MAX_HISTORY_TURNS = 10  # Keep last 10 exchanges in context
+MAX_HISTORY_TURNS = 10
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Context builder
+# ─────────────────────────────────────────────────────────────────────────────
 
 def build_context_from_articles(articles: list[dict]) -> str:
     """Build a compact numbered context string from article dicts."""
@@ -52,27 +55,36 @@ Keep answers concise and helpful.
 --- END CONTEXT ---"""
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# LLM providers
+# ─────────────────────────────────────────────────────────────────────────────
+
 def _ask_gemini(system_prompt: str, history: list[dict], question: str) -> str:
-    """Call Google Gemini API."""
+    """Call Google Gemini API using the new google-genai SDK."""
     gemini_key = GEMINI_API_KEY or os.getenv("GEMINI_API_KEY", "")
     if not gemini_key:
         raise ValueError("GEMINI_API_KEY not set")
 
-    import google.generativeai as genai
-    genai.configure(api_key=gemini_key)
-    model = genai.GenerativeModel(
-        GEMINI_CHAT_MODEL,
-        system_instruction=system_prompt
-    )
+    from google import genai
+    from google.genai import types
 
-    # Convert history to Gemini format
-    gemini_history = []
+    client = genai.Client(api_key=gemini_key)
+
+    contents = []
     for msg in history[-(MAX_HISTORY_TURNS * 2):]:
         role = "user" if msg["role"] == "user" else "model"
-        gemini_history.append({"role": role, "parts": [msg["content"]]})
+        contents.append(types.Content(role=role, parts=[types.Part(text=msg["content"])]))
+    contents.append(types.Content(role="user", parts=[types.Part(text=question)]))
 
-    chat = model.start_chat(history=gemini_history)
-    response = chat.send_message(question)
+    response = client.models.generate_content(
+        model=GEMINI_CHAT_MODEL,
+        contents=contents,
+        config=types.GenerateContentConfig(
+            system_instruction=system_prompt,
+            max_output_tokens=600,
+            temperature=0.4,
+        ),
+    )
     return response.text.strip()
 
 
@@ -101,19 +113,99 @@ def _ask_openai(system_prompt: str, history: list[dict], question: str) -> str:
     return response.choices[0].message.content.strip()
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Local fallback — keyword-based retrieval (zero API calls)
+# ─────────────────────────────────────────────────────────────────────────────
+
+_STOP_WORDS = {
+    "the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for",
+    "is", "was", "are", "were", "be", "been", "being", "have", "has", "had",
+    "do", "does", "did", "will", "would", "could", "should", "may", "might",
+    "must", "can", "this", "that", "these", "those", "what", "which", "who",
+    "how", "when", "where", "why", "with", "from", "by", "about", "into",
+    "through", "during", "of", "not", "tell", "me", "give", "show", "list",
+    "latest", "recent", "news", "happened", "happening", "any", "some",
+    "new", "today", "yesterday", "last", "first", "all", "get", "please",
+}
+
+
+def _score_article(article: dict, keywords: list[str]) -> float:
+    """Score an article by how many query keywords appear in title + description."""
+    text = (
+        (article.get("title") or "") + " " +
+        re.sub(r"<[^>]+>", "", article.get("description") or "")
+    ).lower()
+
+    score = 0.0
+    for kw in keywords:
+        count = text.count(kw)
+        if count:
+            # Title matches worth 3×
+            title_count = (article.get("title") or "").lower().count(kw)
+            score += title_count * 3 + (count - title_count)
+    return score
+
+
+def _local_answer(question: str, articles: list[dict], topic: str) -> str:
+    """
+    Keyword-based article retrieval — no API needed.
+    Extracts meaningful keywords from the question, scores articles,
+    and returns a structured digest of the top matches.
+    """
+    # Extract meaningful keywords from question
+    words = re.findall(r"[a-zA-Z]+", question.lower())
+    keywords = [w for w in words if w not in _STOP_WORDS and len(w) > 2]
+
+    # If no keywords, just summarise all articles
+    if not keywords:
+        keywords = re.findall(r"[a-zA-Z]+", topic.lower())
+
+    # Score and rank articles
+    scored = [(a, _score_article(a, keywords)) for a in articles]
+    scored.sort(key=lambda x: x[1], reverse=True)
+
+    # Pick top matches (score > 0) or top 5 if none match
+    matches = [(a, s) for a, s in scored if s > 0]
+    if not matches:
+        matches = scored[:5]  # fallback: show top 5 by recency
+        note = f"\n\n*No strong keyword matches for your question — showing the {len(matches)} most recent articles instead.*"
+    else:
+        matches = matches[:6]
+        note = ""
+
+    lines = [
+        f"📰 **Local Search Results** — {len(matches)} articles matching your question about **{topic}**:",
+        f"*(Running in offline mode — no AI API key available. Showing keyword-matched article excerpts.)*",
+        "",
+    ]
+
+    for i, (a, score) in enumerate(matches, 1):
+        pub = a["published_date"].strftime("%b %d, %Y") if a.get("published_date") else "N/A"
+        desc = re.sub(r"<[^>]+>", "", a.get("description") or "")
+        snippet = desc[:250].strip() + ("..." if len(desc) > 250 else "")
+
+        lines.append(f"**{i}. {a['title']}**")
+        lines.append(f"   🗞 *{a['source']}* · {pub}")
+        if snippet:
+            lines.append(f"   {snippet}")
+        lines.append(f"   🔗 [{a['url']}]({a['url']})")
+        lines.append("")
+
+    lines.append(note)
+    lines.append("---")
+    lines.append("💡 *To get AI-generated answers, add a valid `GEMINI_API_KEY` or `OPENAI_API_KEY` to your `.env` file.*")
+
+    return "\n".join(lines)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Main entry point
+# ─────────────────────────────────────────────────────────────────────────────
+
 def ask_chatbot(messages: list[dict], question: str, articles: list[dict], topic: str) -> str:
     """
-    Send a question to the LLM with article context and conversation history.
-    Tries Gemini first (free), falls back to OpenAI.
-    
-    Args:
-        messages: Previous conversation turns [{"role": ..., "content": ...}]
-        question: The user's new question
-        articles: Topic-filtered article dicts
-        topic: The topic string the user searched
-
-    Returns:
-        str: The assistant response
+    Send a question with article context and conversation history.
+    Provider priority: Gemini → OpenAI → Local keyword search (always works).
     """
     if not articles:
         return "⚠️ No articles loaded for this topic yet. Please search a topic first using the search bar above."
@@ -124,35 +216,24 @@ def ask_chatbot(messages: list[dict], question: str, articles: list[dict], topic
     gemini_key = GEMINI_API_KEY or os.getenv("GEMINI_API_KEY", "")
     openai_key = OPENAI_API_KEY or os.getenv("OPENAI_API_KEY", "")
 
-    # ── Try Gemini first (free tier) ──
+    # ── 1. Try Gemini ──
     if gemini_key:
         try:
             answer = _ask_gemini(system_prompt, history_for_llm, question)
-            logger.info(f"Gemini answered question about '{topic}' ({len(articles)} articles in context)")
+            logger.info(f"[Gemini] answered about '{topic}' ({len(articles)} articles)")
             return answer
         except Exception as e:
-            logger.warning(f"Gemini failed: {e} — trying OpenAI fallback...")
+            logger.warning(f"[Gemini] failed: {e}")
 
-    # ── Fallback to OpenAI ──
+    # ── 2. Try OpenAI ──
     if openai_key:
         try:
             answer = _ask_openai(system_prompt, history_for_llm, question)
-            logger.info(f"OpenAI answered question about '{topic}' ({len(articles)} articles in context)")
+            logger.info(f"[OpenAI] answered about '{topic}' ({len(articles)} articles)")
             return answer
         except Exception as e:
-            logger.error(f"OpenAI also failed: {e}")
-            return (
-                f"❌ Both AI providers failed.\n\n"
-                f"**OpenAI error**: {str(e)}\n\n"
-                f"To fix this:\n"
-                f"- **Gemini (free)**: Get a key at https://aistudio.google.com/app/apikey and add `GEMINI_API_KEY=...` to your `.env`\n"
-                f"- **OpenAI**: Top up credits at https://platform.openai.com/account/billing"
-            )
+            logger.warning(f"[OpenAI] failed: {e}")
 
-    # ── No keys at all ──
-    return (
-        "⚠️ No AI provider configured.\n\n"
-        "**Option 1 — Gemini (Free)**: Get a key at https://aistudio.google.com/app/apikey\n"
-        "Then add to your `.env` file:\n```\nGEMINI_API_KEY=your_key_here\n```\n\n"
-        "**Option 2 — OpenAI**: Add credits at https://platform.openai.com/account/billing"
-    )
+    # ── 3. Local keyword fallback — always works ──
+    logger.info(f"[Local] using keyword search fallback for '{topic}'")
+    return _local_answer(question, articles, topic)
