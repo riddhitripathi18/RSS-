@@ -172,6 +172,45 @@ with st.sidebar:
     st.markdown(f"**Articles/Digest**: `{MAX_ARTICLES_PER_DIGEST} articles`")
 
 # ───────────────────────────────────────────────────────────────────────────────
+# Auto-Update Check
+# ───────────────────────────────────────────────────────────────────────────────
+def check_and_run_pipeline_if_needed():
+    session = get_session(engine)
+    try:
+        # Check if we have fetched anything today
+        today = datetime.utcnow().date()
+        latest_article = session.query(Article).order_by(Article.fetched_date.desc()).first()
+        
+        needs_update = False
+        if not latest_article:
+            needs_update = True
+        elif latest_article.fetched_date.date() < today:
+            needs_update = True
+            
+        if needs_update:
+            st.info("Auto-triggering Daily News Pipeline...")
+            log_expander = st.expander("Pipeline Output Logs", expanded=True)
+            log_placeholder = log_expander.empty()
+            
+            root_logger = logging.getLogger()
+            handler = StreamlitLogHandler(log_placeholder)
+            root_logger.addHandler(handler)
+            
+            try:
+                with st.spinner("Running Daily Pipeline... (See logs below)"):
+                    run_daily_pipeline()
+                    st.cache_resource.clear()
+                    st.rerun()
+            finally:
+                root_logger.removeHandler(handler)
+    except Exception as e:
+        st.error(f"Error checking updates: {e}")
+    finally:
+        session.close()
+
+check_and_run_pipeline_if_needed()
+
+# ───────────────────────────────────────────────────────────────────────────────
 # Main Layout
 # ───────────────────────────────────────────────────────────────────────────────
 # Load metrics

@@ -30,17 +30,40 @@ class NewsAnalyzer:
     def find_duplicate_articles(self):
         """Find and mark duplicate articles"""
         session = get_session(self.engine)
-        articles = session.query(Article).filter_by(is_duplicate=False).all()
         
-        logger.info(f"Comparing {len(articles)} articles for duplicates (this may take a moment)...")
+        # Only check articles that haven't been processed yet
+        unprocessed_articles = session.query(Article).filter_by(
+            is_duplicate=False, 
+            is_processed=False
+        ).all()
+        
+        if not unprocessed_articles:
+            session.close()
+            return 0
+            
+        from datetime import datetime, timedelta
+        # Get recent articles (last 3 days) to compare against
+        cutoff_date = datetime.utcnow() - timedelta(days=3)
+        recent_articles = session.query(Article).filter(
+            Article.is_duplicate == False,
+            Article.published_date >= cutoff_date
+        ).all()
+        
+        logger.info(f"Comparing {len(unprocessed_articles)} new articles against {len(recent_articles)} recent articles for duplicates...")
         duplicates_found = 0
         
-        # More efficient: group by source first, only compare within similar sources
-        for i, article1 in enumerate(articles):
+        for i, article1 in enumerate(unprocessed_articles):
             if i % 20 == 0:
-                logger.info(f"  Progress: {i}/{len(articles)} articles processed...")
+                logger.info(f"  Progress: {i}/{len(unprocessed_articles)} articles processed...")
             
-            for article2 in articles[i + 1:]:
+            for article2 in recent_articles:
+                if article1.id == article2.id:
+                    continue
+                    
+                # Skip if we already marked this one
+                if article1.is_duplicate:
+                    break
+                
                 # Check title similarity
                 title_similarity = self.calculate_similarity(article1.title, article2.title)
                 
@@ -60,14 +83,15 @@ class NewsAnalyzer:
                 avg_similarity = (title_similarity + desc_similarity) / 2
                 
                 if avg_similarity >= self.similarity_threshold:
-                    # Mark the later article as duplicate (keep first source)
-                    article2.is_duplicate = True
+                    # Mark the newer article as duplicate
+                    article1.is_duplicate = True
                     duplicates_found += 1
                     if duplicates_found % 5 == 0:
                         logger.debug(
                             f"Duplicate found ({avg_similarity:.2%}): "
                             f"'{article1.title[:50]}...'"
                         )
+                    break # No need to check this article1 against others
         
         session.commit()
         logger.info(f"✓ Found and marked {duplicates_found} duplicate articles")
