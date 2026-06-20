@@ -22,6 +22,7 @@ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///rss_news.db")
 
 # LLM Configuration
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")  # Free tier: aistudio.google.com/app/apikey
 
 # Telegram Configuration
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")

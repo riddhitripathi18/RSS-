@@ -159,9 +159,18 @@ with st.sidebar:
     st.markdown("### 📋 Configuration Status")
     
     openai_key_configured = bool(os.getenv("OPENAI_API_KEY"))
+    gemini_key_configured = bool(os.getenv("GEMINI_API_KEY"))
     telegram_configured = bool(os.getenv("TELEGRAM_BOT_TOKEN") and os.getenv("TELEGRAM_CHAT_ID"))
     email_configured = bool(os.getenv("EMAIL_USERNAME") and os.getenv("EMAIL_PASSWORD"))
-    
+
+    if gemini_key_configured:
+        chat_status = "🟢 Gemini (free)"
+    elif openai_key_configured:
+        chat_status = "🟡 OpenAI (paid)"
+    else:
+        chat_status = "🔴 Not Configured"
+
+    st.markdown(f"**AI Chatbot**: {chat_status}")
     st.markdown(
         f"**OpenAI Summarizer**: {'🟢 Configured' if openai_key_configured else '🟡 Using Mock Summary'}"
     )
