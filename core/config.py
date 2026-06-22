@@ -2,10 +2,13 @@
 Configuration file for RSS News Digest System
 """
 import os
+from pathlib import Path
 # pyrefly: ignore [missing-import]
 from dotenv import load_dotenv
 
-load_dotenv()
+# Always load .env from the project root (one level above this file)
+_env_path = Path(__file__).resolve().parent.parent / ".env"
+load_dotenv(dotenv_path=_env_path, override=True)
 
 # RSS Feed sources (add more as needed)
 RSS_FEEDS = [
@@ -23,6 +26,7 @@ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///rss_news.db")
 # LLM Configuration
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")  # Free tier: aistudio.google.com/app/apikey
+NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY", "")
 
 # Telegram Configuration
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")

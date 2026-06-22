@@ -20,7 +20,6 @@ class NewsFetcher:
     
     def __init__(self):
         self.engine = init_db()
-        self.articles_fetched = []
         self.hours_lookback = NEWS_HOURS_LOOKBACK
     
     def fetch_from_feed(self, feed_url):

@@ -29,6 +29,7 @@ class Article(Base):
     is_duplicate = Column(Boolean, default=False)
     is_processed = Column(Boolean, default=False)
     is_digested = Column(Boolean, default=False)  # True once included in a digest
+    click_count = Column(Integer, default=0)      # Click tracking count
     
     def __repr__(self):
         return f"<Article(title='{self.title}', source='{self.source}')>"
@@ -37,16 +38,6 @@ class Article(Base):
         """Generate hash of URL for duplicate detection"""
         self.url_hash = hashlib.md5(self.url.encode()).hexdigest()
 
-
-class ArticleGroup(Base):
-    """Model for grouping related articles"""
-    __tablename__ = "article_groups"
-    
-    id = Column(Integer, primary_key=True)
-    group_name = Column(String)
-    summary = Column(Text)
-    created_date = Column(DateTime, default=datetime.utcnow)
-    is_processed = Column(Boolean, default=False)
 
 
 class Digest(Base):
@@ -67,14 +58,21 @@ def init_db():
     engine = create_engine(DATABASE_URL, echo=False)
     Base.metadata.create_all(engine)
     
-    # Migrate: add is_digested column if it doesn't exist (for existing DBs)
+    # Migrate: add columns if they don't exist
     insp = inspect(engine)
     columns = [col['name'] for col in insp.get_columns('articles')]
+    
     if 'is_digested' not in columns:
         with engine.connect() as conn:
             conn.execute(text("ALTER TABLE articles ADD COLUMN is_digested BOOLEAN DEFAULT 0"))
             conn.commit()
             print("Migrated: added 'is_digested' column to articles table")
+            
+    if 'click_count' not in columns:
+        with engine.connect() as conn:
+            conn.execute(text("ALTER TABLE articles ADD COLUMN click_count INTEGER DEFAULT 0"))
+            conn.commit()
+            print("Migrated: added 'click_count' column to articles table")
     
     print(f"Database initialized: {DATABASE_URL}")
     return engine

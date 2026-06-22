@@ -5,7 +5,6 @@ from core.database import Article, Digest, get_session, init_db
 from datetime import datetime
 from core.config import OPENAI_API_KEY, SUMMARIZATION_MODEL
 import logging
-import json
 
 # Setup logging
 logging.basicConfig(

@@ -1,7 +1,7 @@
 """
 News Analysis Agent - Deduplicates, groups, and ranks articles
 """
-from core.database import Article, ArticleGroup, get_session, init_db
+from core.database import Article, get_session, init_db
 from difflib import SequenceMatcher
 import logging
 from core.config import MAX_ARTICLES_PER_DIGEST

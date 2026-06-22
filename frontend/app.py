@@ -21,7 +21,7 @@ if project_root not in sys.path:
 from core.database import init_db, get_session, Article, Digest
 from core.config import RSS_FEEDS, DATABASE_URL, NEWS_HOURS_LOOKBACK, MAX_ARTICLES_PER_DIGEST
 from core.search import search_articles_by_topic, get_recent_articles
-from core.chatbot import ask_chatbot
+from core.chatbot import ask_chatbot, generate_150_word_summary, generate_trending_overview
 from scripts.scheduler import run_daily_pipeline
 from frontend import ui
 
@@ -75,6 +75,39 @@ def get_db_engine():
 
 engine = get_db_engine()
 
+# Intercept click tracking query parameters
+query_params = st.query_params
+if "read" in query_params:
+    try:
+        art_id_str = query_params["read"]
+        session = get_session(engine)
+        target_url = "/"
+        try:
+            db_art = None
+            if art_id_str.isdigit():
+                db_art = session.query(Article).filter_by(id=int(art_id_str)).first()
+            
+            if not db_art:
+                for art in session.query(Article).all():
+                    if str(abs(art.id)) == art_id_str or str(abs(hash(art.url))) == art_id_str:
+                        db_art = art
+                        break
+            
+            if db_art:
+                db_art.click_count = (db_art.click_count or 0) + 1
+                session.commit()
+                target_url = db_art.url
+        finally:
+            session.close()
+            
+        # Redirect to external target
+        st.markdown(f'<meta http-equiv="refresh" content="0; url={target_url}">', unsafe_allow_html=True)
+        st.markdown(f'<script>window.location.replace("{target_url}");</script>', unsafe_allow_html=True)
+        st.write(f"🔗 Redirecting to [article]({target_url})...")
+        st.stop()
+    except Exception as e:
+        logging.getLogger(__name__).error(f"Error tracking click: {e}")
+
 def load_metrics():
     session = get_session(engine)
     try:
@@ -126,6 +159,114 @@ def load_articles_for_analytics(limit=1000):
     finally:
         session.close()
 
+
+def ensure_article_summaries(engine, articles: list[dict]) -> list[dict]:
+    """
+    Check if the articles have summaries (saved in their 'content' field).
+    For any article missing a summary, generate it using ThreadPoolExecutor in parallel.
+    Save any new summaries back to the database.
+    """
+    if not articles:
+        return []
+
+    # Identify articles that need summaries (less than 50 words in content)
+    missing_idx = []
+    for idx, a in enumerate(articles):
+        content_word_count = len((a.get("content") or "").split())
+        if content_word_count < 50:
+            missing_idx.append(idx)
+
+    if not missing_idx:
+        return articles
+
+    from concurrent.futures import ThreadPoolExecutor
+
+    def process_article(idx):
+        art = articles[idx]
+        try:
+            summary = generate_150_word_summary(art["title"], art["description"])
+            return idx, summary
+        except Exception as e:
+            logging.getLogger(__name__).error(f"Failed generating summary for article {art.get('id')}: {e}")
+            return idx, art["description"]
+
+    # Run summary generation in parallel
+    new_summaries = {}
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        results = executor.map(process_article, missing_idx)
+        for idx, summary in results:
+            new_summaries[idx] = summary
+
+    # Save to database and update in-memory dicts
+    session = get_session(engine)
+    try:
+        for idx, summary in new_summaries.items():
+            art = articles[idx]
+            art["content"] = summary  # Update in-memory dict
+            
+            # Update database record
+            db_art = session.query(Article).filter_by(id=art["id"]).first()
+            if db_art:
+                db_art.content = summary
+        session.commit()
+    except Exception as e:
+        logging.getLogger(__name__).error(f"Failed to save generated summaries to DB: {e}")
+        session.rollback()
+    finally:
+        session.close()
+
+    return articles
+
+
+def get_top_clicked_articles(engine, limit=10, hours=24) -> list[dict]:
+    """Fetch top clicked non-duplicate articles from the last 24 hours."""
+    session = get_session(engine)
+    try:
+        cutoff = datetime.utcnow() - timedelta(hours=hours)
+        articles = (
+            session.query(Article)
+            .filter(
+                Article.is_duplicate == False,
+                Article.published_date >= cutoff
+            )
+            .order_by(Article.click_count.desc(), Article.published_date.desc())
+            .limit(limit)
+            .all()
+        )
+        return [
+            {
+                "id": a.id,
+                "title": a.title,
+                "source": a.source,
+                "url": a.url,
+                "description": a.description or "",
+                "content": a.content or "",
+                "published_date": a.published_date,
+                "click_count": a.click_count or 0,
+            }
+            for a in articles
+        ]
+    finally:
+        session.close()
+
+
+def get_trending_overview_cached(engine, articles: list[dict]) -> str:
+    """Cache the overview summary generation for 5 minutes."""
+    if not articles:
+        return "No trending articles are currently available."
+        
+    # Convert list of dicts to a hashable structure for Streamlit caching
+    hashable_articles = tuple(tuple(sorted((k, v) for k, v in a.items() if k != 'click_count')) for a in articles)
+    
+    @st.cache_data(ttl=300, show_spinner=False)
+    def _generate_cached(articles_data):
+        reconstructed = [dict(item) for item in articles_data]
+        return generate_trending_overview(reconstructed)
+        
+    return _generate_cached(hashable_articles)
+
+
+
 # ───────────────────────────────────────────────────────────────────────────────
 # Sidebar Section
 # ───────────────────────────────────────────────────────────────────────────────
@@ -159,14 +300,15 @@ with st.sidebar:
     st.markdown("### 📋 Configuration Status")
     
     openai_key_configured = bool(os.getenv("OPENAI_API_KEY"))
-    gemini_key_configured = bool(os.getenv("GEMINI_API_KEY"))
+    nvidia_key_configured = bool(os.getenv("NVIDIA_API_KEY"))
+
     telegram_configured = bool(os.getenv("TELEGRAM_BOT_TOKEN") and os.getenv("TELEGRAM_CHAT_ID"))
     email_configured = bool(os.getenv("EMAIL_USERNAME") and os.getenv("EMAIL_PASSWORD"))
 
-    if gemini_key_configured:
-        chat_status = "🟢 Gemini (free)"
+    if nvidia_key_configured:
+        chat_status = "🟢 NVIDIA Llama (primary)"
     elif openai_key_configured:
-        chat_status = "🟡 OpenAI (paid)"
+        chat_status = "🟡 OpenAI (fallback)"
     else:
         chat_status = "🟠 Local Mode (no API)"
 
@@ -180,7 +322,22 @@ with st.sidebar:
     st.markdown(
         f"**Email Dispatcher**: {'🟢 Enabled' if email_configured else '🔴 Disabled'}"
     )
-    
+
+    # ── Debug: API Key Preview ──
+    st.markdown("---")
+    st.markdown("### 🔑 Debug: API Key Preview")
+
+    def mask_key(key: str) -> str:
+        if not key:
+            return "❌ NOT LOADED"
+        return f"✅ {key[:8]}...{key[-4:]}"
+
+    _raw_openai = os.getenv("OPENAI_API_KEY", "")
+    _raw_nvidia  = os.getenv("NVIDIA_API_KEY", "")
+
+    st.code(f"OPENAI : {mask_key(_raw_openai)}", language="text")
+    st.code(f"NVIDIA : {mask_key(_raw_nvidia)}",  language="text")
+
     st.markdown("---")
     st.markdown(f"**Feeds Configured**: `{len(RSS_FEEDS)} feeds`")
     st.markdown(f"**Lookback Window**: `{NEWS_HOURS_LOOKBACK} hours`")
@@ -270,11 +427,24 @@ with search_col:
 with btn_col:
     search_btn = st.button("Search", type="primary", use_container_width=True, key="search_btn")
 
-# Quick topic pills
-st.markdown(
-    " ".join([f"<span class='topic-pill'>{t}</span>" for t in QUICK_TOPICS]),
-    unsafe_allow_html=True
-)
+def select_topic_callback(t):
+    st.session_state.searched_topic = t
+    st.session_state.topic_articles = search_articles_by_topic(engine, t, limit=30, days=7)
+    st.session_state.chat_history = []
+
+
+# Quick topic pills (styled as rounded capsule buttons)
+pill_cols = st.columns(len(QUICK_TOPICS))
+for idx, t in enumerate(QUICK_TOPICS):
+    pill_cols[idx].button(
+        t,
+        key=f"pill_{t}",
+        use_container_width=True,
+        on_click=select_topic_callback,
+        args=(t,)
+    )
+
+
 st.caption("💡 Tip: Click Search to filter articles — the AI chatbot will answer questions about your results only.")
 
 # Handle search
@@ -290,6 +460,56 @@ if search_btn and topic_input.strip():
         st.warning(f"No articles found for **{new_topic}** in the last 7 days. Try running the pipeline or a different keyword.")
     else:
         st.success(f"✅ Found **{len(st.session_state.topic_articles)}** articles about **{new_topic}**. Switch to the AI Chat tab to ask questions!")
+
+# ───────────────────────────────────────────────────────────────────────────────
+# Trending Section: Top 10 Read Articles Overview
+# ───────────────────────────────────────────────────────────────────────────────
+top_10 = get_top_clicked_articles(engine, limit=10, hours=24)
+if top_10:
+    with st.spinner("Generating trending updates..."):
+        top_10 = ensure_article_summaries(engine, top_10)
+        overview_text = get_trending_overview_cached(engine, top_10)
+    
+    st.markdown(f"""
+<div style="background: linear-gradient(135deg, rgba(100, 255, 218, 0.08) 0%, rgba(0, 123, 255, 0.08) 100%);
+            border: 1px solid rgba(100, 255, 218, 0.25);
+            border-radius: 12px;
+            padding: 22px;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            font-size: 0.95rem;
+            color: #e2e8f0;
+            line-height: 1.6;">
+    <h3 style="margin: 0 0 10px 0; color: #64ffda; font-size: 1.25rem; display: flex; align-items: center; gap: 8px;">
+        🔥 Trending: Last 24 Hours Overview
+    </h3>
+
+{overview_text}
+
+</div>
+""", unsafe_allow_html=True)
+    
+    with st.expander("📊 View Top 10 Most Clicked Articles (Last 24 Hours)"):
+        for idx, a in enumerate(top_10, 1):
+            safe_id = abs(int(a.get("id") or hash(a["url"])))
+            clicks = a.get("click_count", 0)
+            click_badge = f"<span style='background:rgba(100,255,218,0.15);color:#64ffda;border:1px solid rgba(100,255,218,0.3);border-radius:12px;padding:2px 8px;font-size:0.75rem;font-weight:600;margin-left:8px;'>🔥 {clicks} reads</span>" if clicks > 0 else ""
+            st.markdown(f"""
+<div style='margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.05);'>
+<div style='font-size: 0.95rem; font-weight: 600; color: #e2e8f0; display: flex; align-items: center; justify-content: space-between;'>
+<span>{idx}. {a['title']}</span>
+{click_badge}
+</div>
+<div style='font-size: 0.8rem; color: #8892b0; margin-top: 2px;'>
+🗞 <i>{a['source']}</i>
+</div>
+<p style='font-size: 0.88rem; color: #a8b2d8; margin: 4px 0 6px 0;'>{a.get('content') or a.get('description') or ''}</p>
+<a href='/?read={safe_id}' target='_blank' style='font-size: 0.82rem; color: #64ffda; text-decoration: none;'>
+🔗 Read full article →
+</a>
+</div>
+""", unsafe_allow_html=True)
 
 st.markdown("---")
 
@@ -342,14 +562,25 @@ with tab2:
         st.markdown("#### 🕐 Recent Headlines (last 48 hours)")
         recent = get_recent_articles(engine, limit=15, days=2)
         if recent:
-            ui.render_topic_articles(recent)
+            recent = ensure_article_summaries(engine, recent)
+            ui.render_topic_articles(recent, ask_fn=ask_chatbot)
         else:
             st.warning("No recent articles found. Run the pipeline to fetch today's news.")
     else:
-        ui.render_section_header(f'📌 Results for: "{st.session_state.searched_topic}"')
+        # Header row with topic label + clear button
+        hcol1, hcol2 = st.columns([5, 1])
+        with hcol1:
+            ui.render_section_header(f'📌 Results for: "{st.session_state.searched_topic}"')
+        with hcol2:
+            if st.button("✕ Clear", key="clear_search_btn", use_container_width=True):
+                st.session_state.searched_topic = ""
+                st.session_state.topic_articles = []
+                st.session_state.chat_history = []
+                st.rerun()
         if st.session_state.topic_articles:
+            st.session_state.topic_articles = ensure_article_summaries(engine, st.session_state.topic_articles)
             st.caption(f"Showing {len(st.session_state.topic_articles)} articles · Max 30 per search · Last 7 days")
-            ui.render_topic_articles(st.session_state.topic_articles)
+            ui.render_topic_articles(st.session_state.topic_articles, ask_fn=ask_chatbot)
         else:
             st.warning(f"No articles found for **{st.session_state.searched_topic}**. Try running the pipeline or a different keyword.")
 
@@ -357,24 +588,38 @@ with tab2:
 # Tab 3: AI Chatbot
 # ───────────────────────────────────────────────────────────────────────────────
 with tab3:
-    has_topic = bool(st.session_state.searched_topic and st.session_state.topic_articles)
+    # Use topic_articles if user searched for a topic. Otherwise, use recent articles.
+    if st.session_state.searched_topic and st.session_state.topic_articles:
+        chat_articles = st.session_state.topic_articles
+        chat_topic = st.session_state.searched_topic
+        is_fallback_recent = False
+    else:
+        chat_articles = get_recent_articles(engine, limit=15, days=2)
+        chat_topic = "Recent Articles"
+        is_fallback_recent = True
+        
+    has_context = bool(chat_articles)
     
     # Header
     chat_header_col1, chat_header_col2 = st.columns([4, 1])
     with chat_header_col1:
         ui.render_section_header("🤖 DigestBot — Ask About Your Topic")
-        if has_topic:
-            gemini_key_configured = bool(os.getenv("GEMINI_API_KEY"))
+        if has_context:
+            nvidia_key_configured = bool(os.getenv("NVIDIA_API_KEY"))
             openai_key_configured = bool(os.getenv("OPENAI_API_KEY"))
-            if gemini_key_configured:
-                provider_label = "Gemini 2.0 Flash"
+            if nvidia_key_configured:
+                provider_label = "NVIDIA Llama 3.1"
             elif openai_key_configured:
                 provider_label = "gpt-4o-mini"
             else:
                 provider_label = "Local Keyword Search (no API key)"
+            
+            context_desc = f"**{len(chat_articles)} articles** about **{chat_topic}**"
+            if is_fallback_recent:
+                context_desc = f"**{len(chat_articles)} recent articles** (default context)"
+                
             st.caption(
-                f"Context: **{len(st.session_state.topic_articles)} articles** about "
-                f"**{st.session_state.searched_topic}** · Powered by {provider_label}"
+                f"Context: {context_desc} · Powered by {provider_label}"
             )
     with chat_header_col2:
         if st.session_state.chat_history:
@@ -384,18 +629,18 @@ with tab3:
 
     # Render chat messages
     if not st.session_state.chat_history:
-        ui.render_chat_empty_state(has_topic)
+        ui.render_chat_empty_state(has_context)
     else:
         for msg in st.session_state.chat_history:
             ui.render_chat_message(msg["role"], msg["content"])
 
     # Chat input
-    if has_topic:
+    if has_context:
         st.markdown("---")
         with st.form(key="chat_form", clear_on_submit=True):
             user_input = st.text_input(
                 "Ask a question",
-                placeholder=f"e.g. What happened with {st.session_state.searched_topic}? Summarize the key developments.",
+                placeholder=f"Ask a question about {chat_topic}...",
                 label_visibility="collapsed",
                 key="chat_input"
             )
@@ -413,8 +658,8 @@ with tab3:
                 answer = ask_chatbot(
                     messages=history_for_llm,
                     question=question,
-                    articles=st.session_state.topic_articles,
-                    topic=st.session_state.searched_topic
+                    articles=chat_articles,
+                    topic=chat_topic
                 )
 
             # Append assistant response
@@ -422,7 +667,8 @@ with tab3:
             st.rerun()
     else:
         st.markdown("---")
-        st.info("🔍 Search a topic above first, then come back here to chat about the articles!")
+        st.info("🔍 Search a topic above first, or run the feed pipeline from the sidebar to populate articles!")
+
 
 # ───────────────────────────────────────────────────────────────────────────────
 # Tab 4: System Analytics

@@ -45,7 +45,9 @@ def search_articles_by_topic(engine, keyword: str, limit: int = 30, days: int = 
                 "source": a.source,
                 "url": a.url,
                 "description": a.description or "",
+                "content": a.content or "",
                 "published_date": a.published_date,
+                "click_count": a.click_count or 0,
             }
             for a in articles
         ]
@@ -78,7 +80,9 @@ def get_recent_articles(engine, limit: int = 30, days: int = 2) -> list[dict]:
                 "source": a.source,
                 "url": a.url,
                 "description": a.description or "",
+                "content": a.content or "",
                 "published_date": a.published_date,
+                "click_count": a.click_count or 0,
             }
             for a in articles
         ]

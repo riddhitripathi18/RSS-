@@ -173,7 +173,25 @@ def load_custom_css():
     .article-card:hover {
         border-color: rgba(100,255,218,0.25);
     }
+
+    /* Style default Streamlit buttons to look like rounded pills */
+    div.stButton > button:not([kind="primary"]):not([class*="Primary"]):not([class*="primary"]) {
+        border-radius: 20px !important;
+        background-color: rgba(100,255,218,0.06) !important;
+        color: #64ffda !important;
+        border: 1px solid rgba(100,255,218,0.2) !important;
+        font-weight: 500 !important;
+        font-size: 0.85rem !important;
+        padding: 4px 16px !important;
+        transition: all 0.2s ease-in-out !important;
+    }
+    div.stButton > button:not([kind="primary"]):not([class*="Primary"]):not([class*="primary"]):hover {
+        background-color: rgba(100,255,218,0.15) !important;
+        border-color: #64ffda !important;
+        color: #ffffff !important;
+    }
 </style>
+
 """, unsafe_allow_html=True)
 
 def render_sidebar_logo():
@@ -199,27 +217,6 @@ def render_delivery_status(is_sent):
     status_text = "SENT" if is_sent else "NOT SENT"
     badge_class = "badge-sent" if is_sent else "badge-unsent"
     st.markdown(f"**Delivery Status**: <span class='status-badge {badge_class}'>{status_text}</span>", unsafe_allow_html=True)
-
-def render_article_card_header(row):
-    if row["Is Duplicate"]:
-        badge_html = "<span class='status-badge badge-duplicate'>Duplicate</span>"
-    else:
-        badge_html = "<span class='status-badge badge-unique'>Unique</span>"
-        
-    proc_badge = "✅ Processed" if row["Is Processed"] else "⏳ Pending"
-    pub_date = row['Published Date'].strftime('%Y-%m-%d %H:%M') if pd.notnull(row['Published Date']) else 'N/A'
-    
-    st.markdown(f"""
-    <h4 style="margin: 0 0 5px 0;">{row['Title']}</h4>
-    <div style="font-size: 0.85rem; color: #8892b0; margin-bottom: 8px;">
-        Source: <strong>{row['Source']}</strong> | 
-        Published: {pub_date} | 
-        {badge_html} | <span style="font-weight:600;">{proc_badge}</span>
-    </div>
-    """, unsafe_allow_html=True)
-
-def render_divider():
-    st.markdown("<hr style='margin: 10px 0; border: 0; border-top: 1px solid rgba(255,255,255,0.05);'>", unsafe_allow_html=True)
 
 
 def render_search_bar():
@@ -273,20 +270,101 @@ def render_chat_empty_state(has_topic: bool):
         """, unsafe_allow_html=True)
 
 
-def render_topic_articles(articles: list[dict]):
-    """Render a list of topic-search article cards."""
+def render_topic_articles(articles: list[dict], ask_fn=None):
+    """Render article cards in sequence: Headline → Summary → Link → Chat.
+
+    ask_fn: callable(messages, question, articles, topic) -> str
+             Pass app.ask_chatbot so ui.py doesn't need to import it.
+    """
     import re
+
+    def _truncate_to_words(text: str, min_words: int = 100, max_words: int = 150) -> str:
+        """Truncate text to between min_words and max_words, ending at a sentence boundary if possible."""
+        words = text.split()
+        if len(words) <= max_words:
+            return text
+        # Try to end at a sentence boundary between min and max words
+        truncated = " ".join(words[:max_words])
+        # Look for last sentence-ending punctuation within the range
+        for i in range(len(truncated) - 1, 0, -1):
+            if truncated[i] in ".!?" and i > len(" ".join(words[:min_words])):
+                return truncated[: i + 1]
+        return truncated + "..."
+
     for a in articles:
-        desc = re.sub(r"<[^>]+>", "", a.get("description") or "")
-        snippet = desc[:200] + ("..." if len(desc) > 200 else "")
+        article_id = a.get("id") or abs(hash(a["url"]))
+        safe_id = abs(int(article_id))
+
+        # Clean HTML tags from summary content or fallback description
+        text_to_display = a.get("content") or a.get("description") or ""
+        raw_text = re.sub(r"<[^>]+>", "", text_to_display)
+        summary = _truncate_to_words(raw_text) if raw_text.strip() else "No summary available."
+
         pub = a["published_date"].strftime("%b %d, %Y %H:%M") if a.get("published_date") else "N/A"
+
+        # ── 1. Article Headline ──────────────────────────────────────────────
         st.markdown(f"""
-        <div class="article-card">
-            <h4 style="margin: 0 0 4px 0; color: #e2e8f0;">{a['title']}</h4>
-            <div style="font-size: 0.8rem; color: #8892b0; margin-bottom: 8px;">
-                <strong>{a['source']}</strong> &nbsp;·&nbsp; {pub}
+        <div class="article-card" style="margin-bottom:0;padding-bottom:14px;">
+            <h4 style="margin:0 0 6px 0;color:#e2e8f0;font-size:1.15rem;">{a['title']}</h4>
+            <div style="font-size:0.75rem;color:#8892b0;margin-bottom:10px;">
+                {a['source']}&nbsp;·&nbsp;{pub}
             </div>
-            <p style="font-size: 0.88rem; color: #a8b2d8; margin: 0 0 8px 0;">{snippet}</p>
-            <a href="{a['url']}" target="_blank" style="font-size:0.8rem; color:#64ffda;">Read full article →</a>
+            <p style="font-size:0.9rem;color:#a8b2d8;line-height:1.6;margin:0 0 12px 0;">{summary}</p>
+            <a href="/?read={safe_id}" target="_blank"
+               style="font-size:0.85rem;color:#64ffda;text-decoration:none;font-weight:500;">
+                🔗 Read full article →
+            </a>
         </div>
         """, unsafe_allow_html=True)
+
+        # ── 4. Chat about this article ───────────────────────────────────────
+        chat_key = f"art_chat_{safe_id}"
+        if chat_key not in st.session_state:
+            st.session_state[chat_key] = []
+
+        with st.expander("💬 Chat about this article"):
+            # Show existing conversation
+            for msg in st.session_state[chat_key]:
+                if msg["role"] == "user":
+                    st.markdown(
+                        f"<div style='background:rgba(0,123,255,0.15);border-radius:8px;"
+                        f"padding:8px 12px;margin:4px 0;font-size:0.9rem;'>"
+                        f"👤 <b>You:</b> {msg['content']}</div>",
+                        unsafe_allow_html=True,
+                    )
+                else:
+                    st.markdown(
+                        f"<div style='background:rgba(255,255,255,0.05);border-radius:8px;"
+                        f"padding:8px 12px;margin:4px 0;font-size:0.9rem;'>"
+                        f"🤖 <b>AI:</b> {msg['content']}</div>",
+                        unsafe_allow_html=True,
+                    )
+
+            if ask_fn is None:
+                st.caption("⚠️ Chatbot not connected — ask_fn not supplied.")
+            else:
+                q_key = f"art_q_{safe_id}"
+                user_q = st.text_input(
+                    "Ask about this article:",
+                    key=q_key,
+                    placeholder="e.g. Summarize this / What is the main takeaway?",
+                    label_visibility="collapsed",
+                )
+                if st.button("Ask ➔", key=f"art_btn_{safe_id}", use_container_width=False):
+                    if user_q.strip():
+                        with st.spinner("Thinking..."):
+                            answer = ask_fn(
+                                messages=st.session_state[chat_key],
+                                question=user_q.strip(),
+                                articles=[a],
+                                topic=a["title"],
+                            )
+                        st.session_state[chat_key].append({"role": "user", "content": user_q.strip()})
+                        st.session_state[chat_key].append({"role": "assistant", "content": answer})
+                        st.rerun()
+
+        st.markdown("<div style='margin-bottom:18px;'></div>", unsafe_allow_html=True)
+
+
+
+
