@@ -23,7 +23,7 @@ RSS_FEEDS = [
     "https://timesofindia.indiatimes.com/rssfeedstopstories.cms",
     "https://www.thehindu.com/news/national/feeder/default.rss",
     "https://feeds.feedburner.com/ndtvnews-top-stories",
-    "https://www.indiatoday.in/rss/home",
+    "https://economictimes.indiatimes.com/rssfeedstopstories.cms",
     "https://www.hindustantimes.com/feeds/rss/india-news/rssfeed.xml",
     # ── Stock Market & Finance ──
     "https://feeds.marketwatch.com/marketwatch/topstories/",

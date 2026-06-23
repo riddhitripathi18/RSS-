@@ -19,21 +19,30 @@ def search_articles_by_topic(engine, keyword: str, limit: int = 30, days: int = 
     session = get_session(engine)
     try:
         cutoff = datetime.utcnow() - timedelta(days=days)
-        keyword_pattern = f"%{keyword}%"
+
+        # Split multi-word queries into individual words and match titles
+        # containing ANY of them.  e.g. "stock market" matches titles with
+        # "stock" OR "market" (headlines rarely use exact user phrases).
+        from sqlalchemy import or_
+        words = [w.strip() for w in keyword.split() if w.strip()]
+        if not words:
+            return []
+
+        title_filters = [Article.title.ilike(f"%{w}%") for w in words]
 
         articles = (
             session.query(Article)
             .filter(
                 Article.is_duplicate == False,
                 Article.published_date >= cutoff,
-                Article.title.ilike(keyword_pattern)
+                or_(*title_filters)
             )
             .order_by(Article.published_date.desc())
             .limit(limit)
             .all()
         )
 
-        logger.info(f"Topic search '{keyword}': found {len(articles)} articles (limit={limit}, days={days})")
+        logger.info(f"Topic search '{keyword}' (words={words}): found {len(articles)} articles (limit={limit}, days={days})")
 
         return [
             {
