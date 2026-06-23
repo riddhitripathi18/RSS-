@@ -12,12 +12,23 @@ load_dotenv(dotenv_path=_env_path, override=True)
 
 # RSS Feed sources (add more as needed)
 RSS_FEEDS = [
+    # ── International ──
     "https://feeds.bbc.co.uk/news/rss.xml",
     "https://feeds.cnbc.com/cnbc/world",
     "https://feeds.reuters.com/reuters/topNews",
     "https://feeds.theguardian.com/theguardian/international/rss",
     "https://feeds.bloomberg.com/markets/news.rss",
     "https://feeds.nytimes.com/services/xml/rss/nyt/World.xml",
+    # ── Indian News ──
+    "https://timesofindia.indiatimes.com/rssfeedstopstories.cms",
+    "https://www.thehindu.com/news/national/feeder/default.rss",
+    "https://feeds.feedburner.com/ndtvnews-top-stories",
+    "https://www.indiatoday.in/rss/home",
+    "https://www.hindustantimes.com/feeds/rss/india-news/rssfeed.xml",
+    # ── Stock Market & Finance ──
+    "https://feeds.marketwatch.com/marketwatch/topstories/",
+    "https://www.moneycontrol.com/rss/latestnews.xml",
+    "https://finance.yahoo.com/news/rssindex",
 ]
 
 # Database configuration

@@ -26,10 +26,7 @@ def search_articles_by_topic(engine, keyword: str, limit: int = 30, days: int = 
             .filter(
                 Article.is_duplicate == False,
                 Article.published_date >= cutoff,
-                (
-                    Article.title.ilike(keyword_pattern) |
-                    Article.description.ilike(keyword_pattern)
-                )
+                Article.title.ilike(keyword_pattern)
             )
             .order_by(Article.published_date.desc())
             .limit(limit)
