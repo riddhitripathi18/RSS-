@@ -313,6 +313,134 @@ Write only the summary. Do not include any intro like "Here is a summary:" or ou
     return description or title
 
 
+def generate_key_takeaways(title: str, description: str) -> str:
+    """Generate 3-4 bullet points highlighting key takeaways from title and description."""
+    if not title and not description:
+        return "- No information available."
+
+    prompt = f"""You are an expert news editor.
+Based ONLY on the following news headline and short description, write exactly 3 to 4 concise bullet points highlighting key takeaways.
+Each bullet point must be 15 to 30 words.
+Do not add any intro like "Here are the key takeaways:" or outro text. Output only the bullet points.
+
+Headline: {title}
+Description: {description}"""
+
+    nvidia_key = NVIDIA_API_KEY or os.getenv("NVIDIA_API_KEY", "")
+    openai_key = OPENAI_API_KEY or os.getenv("OPENAI_API_KEY", "")
+
+    # 1. Try NVIDIA
+    if nvidia_key:
+        try:
+            from openai import OpenAI
+            client = OpenAI(base_url=NVIDIA_BASE_URL, api_key=nvidia_key)
+            response = client.chat.completions.create(
+                model=NVIDIA_CHAT_MODEL,
+                messages=[
+                    {"role": "system", "content": "You are a professional news editor. You extract clean, concise bulleted takeaways. You never make things up."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=300,
+                temperature=0.3,
+            )
+            return response.choices[0].message.content.strip()
+        except Exception as e:
+            logger.warning(f"NVIDIA takeaways generation failed: {e}")
+
+    # 2. Try OpenAI
+    if openai_key:
+        try:
+            from openai import OpenAI
+            client = OpenAI(api_key=openai_key)
+            response = client.chat.completions.create(
+                model=OPENAI_CHAT_MODEL,
+                messages=[
+                    {"role": "system", "content": "You are a professional news editor. You extract clean, concise bulleted takeaways. You never make things up."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=300,
+                temperature=0.3,
+            )
+            return response.choices[0].message.content.strip()
+        except Exception as e:
+            logger.warning(f"OpenAI takeaways generation failed: {e}")
+
+    # Local fallback
+    if description:
+        sentences = [s.strip() for s in re.split(r'(?<=[.!?]) +', description) if s.strip()]
+        if len(sentences) >= 2:
+            return "\n".join([f"- {s}" for s in sentences[:4]])
+        return f"- {title}\n- {description}"
+    return f"- {title}"
+
+
+def generate_5ws_summary(title: str, description: str) -> str:
+    """Generate a 5 Ws (Who, What, Where, When, Why) breakdown from title and description."""
+    if not title and not description:
+        return "- **Who**: N/A\n- **What**: N/A\n- **Where**: N/A\n- **When**: N/A\n- **Why**: N/A"
+
+    prompt = f"""You are an expert news editor.
+Based ONLY on the following headline and description, break down the news story into the 5 Ws: Who, What, Where, When, Why.
+Format the output exactly as:
+- **Who**: [Who is involved]
+- **What**: [What happened]
+- **Where**: [Where did it occur]
+- **When**: [When did it occur]
+- **Why**: [Why did it happen]
+
+Keep each explanation concise (under 20 words). Do not add any intro or outro text.
+
+Headline: {title}
+Description: {description}"""
+
+    nvidia_key = NVIDIA_API_KEY or os.getenv("NVIDIA_API_KEY", "")
+    openai_key = OPENAI_API_KEY or os.getenv("OPENAI_API_KEY", "")
+
+    # 1. Try NVIDIA
+    if nvidia_key:
+        try:
+            from openai import OpenAI
+            client = OpenAI(base_url=NVIDIA_BASE_URL, api_key=nvidia_key)
+            response = client.chat.completions.create(
+                model=NVIDIA_CHAT_MODEL,
+                messages=[
+                    {"role": "system", "content": "You are a professional news editor. You analyze stories into the 5 Ws. You never make things up."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=300,
+                temperature=0.3,
+            )
+            return response.choices[0].message.content.strip()
+        except Exception as e:
+            logger.warning(f"NVIDIA 5Ws generation failed: {e}")
+
+    # 2. Try OpenAI
+    if openai_key:
+        try:
+            from openai import OpenAI
+            client = OpenAI(api_key=openai_key)
+            response = client.chat.completions.create(
+                model=OPENAI_CHAT_MODEL,
+                messages=[
+                    {"role": "system", "content": "You are a professional news editor. You analyze stories into the 5 Ws. You never make things up."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=300,
+                temperature=0.3,
+            )
+            return response.choices[0].message.content.strip()
+        except Exception as e:
+            logger.warning(f"OpenAI 5Ws generation failed: {e}")
+
+    # Local fallback
+    who = "Key parties mentioned in headline"
+    what = title
+    where = "See full article"
+    when = "Recent"
+    why = description or "Refer to full article for details"
+    return f"- **Who**: {who}\n- **What**: {what}\n- **Where**: {where}\n- **When**: {when}\n- **Why**: {why}"
+
+
 def clean_trending_overview(text: str) -> str:
     """Strip markdown or HTML links from the text, replacing them with bold topic names."""
     if not text:

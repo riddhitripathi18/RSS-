@@ -30,6 +30,8 @@ class Article(Base):
     is_processed = Column(Boolean, default=False)
     is_digested = Column(Boolean, default=False)  # True once included in a digest
     click_count = Column(Integer, default=0)      # Click tracking count
+    bullets_content = Column(Text)                # Cached bullets summary
+    five_ws_content = Column(Text)                # Cached 5Ws summary
     
     def __repr__(self):
         return f"<Article(title='{self.title}', source='{self.source}')>"
@@ -73,6 +75,18 @@ def init_db():
             conn.execute(text("ALTER TABLE articles ADD COLUMN click_count INTEGER DEFAULT 0"))
             conn.commit()
             print("Migrated: added 'click_count' column to articles table")
+            
+    if 'bullets_content' not in columns:
+        with engine.connect() as conn:
+            conn.execute(text("ALTER TABLE articles ADD COLUMN bullets_content TEXT"))
+            conn.commit()
+            print("Migrated: added 'bullets_content' column to articles table")
+            
+    if 'five_ws_content' not in columns:
+        with engine.connect() as conn:
+            conn.execute(text("ALTER TABLE articles ADD COLUMN five_ws_content TEXT"))
+            conn.commit()
+            print("Migrated: added 'five_ws_content' column to articles table")
     
     print(f"Database initialized: {DATABASE_URL}")
     return engine

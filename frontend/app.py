@@ -218,6 +218,118 @@ def ensure_article_summaries(engine, articles: list[dict]) -> list[dict]:
     return articles
 
 
+def ensure_article_bullets(engine, articles: list[dict]) -> list[dict]:
+    """Ensure that the articles have bullets summary. Generate and cache if missing."""
+    if not articles:
+        return []
+
+    missing_idx = []
+    for idx, a in enumerate(articles):
+        bullets_word_count = len((a.get("bullets_content") or "").split())
+        if bullets_word_count < 10:
+            missing_idx.append(idx)
+
+    if not missing_idx:
+        return articles
+
+    from concurrent.futures import ThreadPoolExecutor
+    from core.chatbot import generate_key_takeaways
+
+    def process_article(idx):
+        art = articles[idx]
+        try:
+            summary = generate_key_takeaways(art["title"], art["description"])
+            return idx, summary
+        except Exception as e:
+            logging.getLogger(__name__).error(f"Failed generating bullets for article {art.get('id')}: {e}")
+            return idx, f"- {art['description'] or art['title']}"
+
+    new_summaries = {}
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        results = executor.map(process_article, missing_idx)
+        for idx, summary in results:
+            new_summaries[idx] = summary
+
+    session = get_session(engine)
+    try:
+        for idx, summary in new_summaries.items():
+            art = articles[idx]
+            art["bullets_content"] = summary
+            
+            db_art = session.query(Article).filter_by(id=art["id"]).first()
+            if db_art:
+                db_art.bullets_content = summary
+        session.commit()
+    except Exception as e:
+        logging.getLogger(__name__).error(f"Failed to save generated bullets to DB: {e}")
+        session.rollback()
+    finally:
+        session.close()
+
+    return articles
+
+
+def ensure_article_five_ws(engine, articles: list[dict]) -> list[dict]:
+    """Ensure that the articles have 5 Ws summary. Generate and cache if missing."""
+    if not articles:
+        return []
+
+    missing_idx = []
+    for idx, a in enumerate(articles):
+        five_ws_word_count = len((a.get("five_ws_content") or "").split())
+        if five_ws_word_count < 10:
+            missing_idx.append(idx)
+
+    if not missing_idx:
+        return articles
+
+    from concurrent.futures import ThreadPoolExecutor
+    from core.chatbot import generate_5ws_summary
+
+    def process_article(idx):
+        art = articles[idx]
+        try:
+            summary = generate_5ws_summary(art["title"], art["description"])
+            return idx, summary
+        except Exception as e:
+            logging.getLogger(__name__).error(f"Failed generating 5Ws for article {art.get('id')}: {e}")
+            return idx, f"- **What**: {art['title']}"
+
+    new_summaries = {}
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        results = executor.map(process_article, missing_idx)
+        for idx, summary in results:
+            new_summaries[idx] = summary
+
+    session = get_session(engine)
+    try:
+        for idx, summary in new_summaries.items():
+            art = articles[idx]
+            art["five_ws_content"] = summary
+            
+            db_art = session.query(Article).filter_by(id=art["id"]).first()
+            if db_art:
+                db_art.five_ws_content = summary
+        session.commit()
+    except Exception as e:
+        logging.getLogger(__name__).error(f"Failed to save generated 5Ws to DB: {e}")
+        session.rollback()
+    finally:
+        session.close()
+
+    return articles
+
+
+def prepare_summaries(engine, articles: list[dict], fmt: str) -> list[dict]:
+    """Helper to load/generate correct summary format depending on user preference."""
+    if fmt == "Bullets":
+        return ensure_article_bullets(engine, articles)
+    elif fmt == "5 Ws":
+        return ensure_article_five_ws(engine, articles)
+    else:
+        return ensure_article_summaries(engine, articles)
+
+
 def get_top_clicked_articles(engine, limit=10, hours=24) -> list[dict]:
     """Fetch top clicked non-duplicate articles from the last 24 hours."""
     session = get_session(engine)
@@ -241,6 +353,8 @@ def get_top_clicked_articles(engine, limit=10, hours=24) -> list[dict]:
                 "url": a.url,
                 "description": a.description or "",
                 "content": a.content or "",
+                "bullets_content": a.bullets_content or "",
+                "five_ws_content": a.five_ws_content or "",
                 "published_date": a.published_date,
                 "click_count": a.click_count or 0,
             }
@@ -409,6 +523,32 @@ with col4:
     ui.render_metric_card("Digests Generated", total_digests)
 
 # ───────────────────────────────────────────────────────────────────────────────
+# Summary Format Selector (Particle Style)
+# ───────────────────────────────────────────────────────────────────────────────
+if "summary_format" not in st.session_state:
+    st.session_state.summary_format = "TL;DR"
+
+st.markdown("""
+<div style='margin-top: 15px; margin-bottom: 8px; font-size: 0.85rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600;'>
+    📄 Select Summary Perspective
+</div>
+""", unsafe_allow_html=True)
+
+fmt_cols = st.columns([1, 1, 1, 3])
+with fmt_cols[0]:
+    if st.button("📄 TL;DR Summary", use_container_width=True, type="primary" if st.session_state.summary_format == "TL;DR" else "secondary", key="btn_fmt_tldr"):
+        st.session_state.summary_format = "TL;DR"
+        st.rerun()
+with fmt_cols[1]:
+    if st.button("⚡ Key Takeaways", use_container_width=True, type="primary" if st.session_state.summary_format == "Bullets" else "secondary", key="btn_fmt_bullets"):
+        st.session_state.summary_format = "Bullets"
+        st.rerun()
+with fmt_cols[2]:
+    if st.button("❓ 5 Ws Analysis", use_container_width=True, type="primary" if st.session_state.summary_format == "5 Ws" else "secondary", key="btn_fmt_5ws"):
+        st.session_state.summary_format = "5 Ws"
+        st.rerun()
+
+# ───────────────────────────────────────────────────────────────────────────────
 # Topic Search Bar (Always Visible)
 # ───────────────────────────────────────────────────────────────────────────────
 ui.render_search_bar()
@@ -467,7 +607,7 @@ if search_btn and topic_input.strip():
 top_10 = get_top_clicked_articles(engine, limit=10, hours=24)
 if top_10:
     with st.spinner("Generating trending updates..."):
-        top_10 = ensure_article_summaries(engine, top_10)
+        top_10 = prepare_summaries(engine, top_10, st.session_state.summary_format)
         overview_text = get_trending_overview_cached(engine, top_10)
     
     st.markdown(f"""
@@ -495,6 +635,15 @@ if top_10:
             safe_id = abs(int(a.get("id") or hash(a["url"])))
             clicks = a.get("click_count", 0)
             click_badge = f"<span style='background:rgba(100,255,218,0.15);color:#64ffda;border:1px solid rgba(100,255,218,0.3);border-radius:12px;padding:2px 8px;font-size:0.75rem;font-weight:600;margin-left:8px;'>🔥 {clicks} reads</span>" if clicks > 0 else ""
+            
+            if st.session_state.summary_format == "Bullets":
+                raw_summary = a.get("bullets_content") or a.get("description") or ""
+            elif st.session_state.summary_format == "5 Ws":
+                raw_summary = a.get("five_ws_content") or a.get("description") or ""
+            else:
+                raw_summary = a.get("content") or a.get("description") or ""
+            summary_html_text = raw_summary.replace("\n", "<br>")
+
             st.markdown(f"""
 <div style='margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.05);'>
 <div style='font-size: 0.95rem; font-weight: 600; color: #e2e8f0; display: flex; align-items: center; justify-content: space-between;'>
@@ -504,7 +653,7 @@ if top_10:
 <div style='font-size: 0.8rem; color: #8892b0; margin-top: 2px;'>
 🗞 <i>{a['source']}</i>
 </div>
-<p style='font-size: 0.88rem; color: #a8b2d8; margin: 4px 0 6px 0;'>{a.get('content') or a.get('description') or ''}</p>
+<p style='font-size: 0.88rem; color: #a8b2d8; margin: 4px 0 6px 0;'>{summary_html_text}</p>
 <a href='/?read={safe_id}' target='_blank' style='font-size: 0.82rem; color: #64ffda; text-decoration: none;'>
 🔗 Read full article →
 </a>
@@ -562,7 +711,7 @@ with tab2:
         st.markdown("#### 🕐 Recent Headlines (last 48 hours)")
         recent = get_recent_articles(engine, limit=15, days=2)
         if recent:
-            recent = ensure_article_summaries(engine, recent)
+            recent = prepare_summaries(engine, recent, st.session_state.summary_format)
             ui.render_topic_articles(recent, ask_fn=ask_chatbot)
         else:
             st.warning("No recent articles found. Run the pipeline to fetch today's news.")
@@ -578,7 +727,7 @@ with tab2:
                 st.session_state.chat_history = []
                 st.rerun()
         if st.session_state.topic_articles:
-            st.session_state.topic_articles = ensure_article_summaries(engine, st.session_state.topic_articles)
+            st.session_state.topic_articles = prepare_summaries(engine, st.session_state.topic_articles, st.session_state.summary_format)
             st.caption(f"Showing {len(st.session_state.topic_articles)} articles · Max 30 per search · Last 7 days")
             ui.render_topic_articles(st.session_state.topic_articles, ask_fn=ask_chatbot)
         else:
