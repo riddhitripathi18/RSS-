@@ -33,9 +33,14 @@ class DigestDelivery:
         self.smtp_port = EMAIL_SMTP_PORT
     
     def get_unsent_digests(self):
-        """Get digests that haven't been sent yet"""
+        """Get digests that haven't been sent yet (restricted to the last 24 hours to avoid backing up old news)"""
         session = get_session(self.engine)
-        digests = session.query(Digest).filter_by(is_sent=False).all()
+        from datetime import datetime, timedelta
+        cutoff = datetime.utcnow() - timedelta(hours=24)
+        digests = session.query(Digest).filter(
+            Digest.is_sent == False,
+            Digest.digest_date >= cutoff
+        ).all()
         
         # Convert to dicts
         digests_data = [
@@ -114,7 +119,7 @@ class DigestDelivery:
             msg.attach(html_part)
             
             # Send email
-            with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
+            with smtplib.SMTP(self.smtp_server, self.smtp_port, timeout=5) as server:
                 server.starttls()
                 server.login(self.email_username, self.email_password)
                 server.sendmail(self.email_username, recipient_email, msg.as_string())

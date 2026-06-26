@@ -10,12 +10,36 @@ import pandas as pd
 def load_custom_css():
     st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
     
-    html, body, [data-testid="stAppViewContainer"] {
-        background-color: #080A10 !important;
-        font-family: 'Inter', sans-serif;
-        color: #f1f5f9;
+    /* ─────────────────────────────────────────────────────────────────────────────
+       Page background & custom premium font
+       ───────────────────────────────────────────────────────────────────────────── */
+    html, body,
+    [data-testid="stApp"],
+    [data-testid="stAppViewContainer"],
+    [data-testid="stMain"],
+    [data-testid="stMainBlockContainer"],
+    section.main,
+    .main {
+        background: radial-gradient(circle at 10% 20%, #0c2b24 0%, #112d27 40%, #a25525 85%, #081a17 100%) !important;
+        background-size: cover !important;
+        background-attachment: fixed !important;
+        color: #f8fafc !important;
+        font-family: 'Plus Jakarta Sans', sans-serif !important;
+    }
+
+    /* Streamlit block containers should be transparent so the page bg shows */
+    [data-testid="stVerticalBlock"],
+    [data-testid="stHorizontalBlock"],
+    div.block-container {
+        background-color: transparent !important;
+    }
+    
+    /* Override Sidebar background to match the dark theme */
+    [data-testid="stSidebar"] {
+        background-color: rgba(12, 43, 36, 0.95) !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
     }
     
     /* Clean, modern scrollbars */
@@ -24,519 +48,760 @@ def load_custom_css():
         height: 8px;
     }
     ::-webkit-scrollbar-track {
-        background: #080A10;
+        background: rgba(0,0,0,0.1);
     }
     ::-webkit-scrollbar-thumb {
-        background: #1f2937;
+        background: rgba(255,255,255,0.1);
         border-radius: 4px;
     }
     ::-webkit-scrollbar-thumb:hover {
-        background: #374151;
+        background: rgba(255,255,255,0.25);
     }
 
     h1, h2, h3, h4, h5, h6 {
-        font-family: 'Space Grotesk', sans-serif !important;
-        font-weight: 600 !important;
+        font-family: 'Playfair Display', serif !important;
+        font-weight: 700 !important;
         color: #ffffff !important;
-        letter-spacing: -0.02em;
+        letter-spacing: -0.01em;
+    }
+
+    /* Onboarding Category Selection Cards */
+    .category-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+    
+    .category-item {
+        background: rgba(255, 255, 255, 0.95) !important;
+        border: 2px solid transparent !important;
+        border-radius: 20px !important;
+        padding: 20px !important;
+        color: #1e293b !important;
+        transition: all 0.25s ease !important;
+        position: relative !important;
+        text-align: left !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05) !important;
+    }
+    
+    .category-item:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
+    }
+    
+    .category-item.selected {
+        border-color: #b55e2a !important;
+        background: #ffffff !important;
+        box-shadow: 0 8px 25px rgba(181, 94, 42, 0.15) !important;
+    }
+    
+    .category-badge-pill {
+        font-size: 0.65rem !important;
+        text-transform: uppercase !important;
+        font-weight: 700 !important;
+        letter-spacing: 1px !important;
+        color: #b55e2a !important;
+        margin-bottom: 8px !important;
+        display: inline-block !important;
+    }
+    
+    .category-icon-container {
+        font-size: 1.6rem !important;
+        margin-bottom: 8px !important;
+    }
+    
+    .category-card-title {
+        font-family: 'Plus Jakarta Sans', sans-serif !important;
+        font-size: 1.1rem !important;
+        font-weight: 700 !important;
+        color: #0f172a !important;
+        margin: 0 0 4px 0 !important;
+    }
+    
+    .category-card-desc {
+        font-size: 0.8rem !important;
+        color: #64748b !important;
+        margin: 0 !important;
+        line-height: 1.35 !important;
+    }
+
+
+
+    /* Headlines Hero Card */
+    .hero-headlines-card {
+        background: linear-gradient(135deg, rgba(255,255,255,0.94) 0%, rgba(248,250,252,0.96) 100%) !important;
+        border-radius: 24px !important;
+        padding: 24px !important;
+        margin-bottom: 24px !important;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.08) !important;
+        color: #0f172a !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+    }
+    
+    .hero-content {
+        max-width: 70% !important;
+    }
+    
+    .hero-tag {
+        font-size: 0.75rem !important;
+        font-weight: 700 !important;
+        color: #b55e2a !important;
+        text-transform: uppercase !important;
+        margin-bottom: 6px !important;
+        letter-spacing: 0.5px !important;
+    }
+    
+    .hero-title {
+        font-family: 'Playfair Display', serif !important;
+        font-size: 2rem !important;
+        font-weight: 800 !important;
+        color: #0f172a !important;
+        margin: 0 0 8px 0 !important;
+        line-height: 1.15 !important;
+    }
+    
+    .hero-desc {
+        font-size: 0.85rem !important;
+        color: #475569 !important;
+        margin: 0 !important;
+        line-height: 1.4 !important;
+    }
+    
+    .hero-graphic {
+        width: 60px !important;
+        height: 60px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    
+    .heart-3d {
+        font-size: 3rem !important;
+        animation: float 3s ease-in-out infinite !important;
+    }
+    
+    @keyframes float {
+        0% { transform: translateY(0px) rotate(0deg); }
+        50% { transform: translateY(-8px) rotate(8deg); }
+        100% { transform: translateY(0px) rotate(0deg); }
     }
 
     /* Glassmorphism theme elements */
     .metric-card {
-        background: rgba(20, 26, 40, 0.65) !important;
-        backdrop-filter: blur(12px);
-        border-radius: 12px;
-        padding: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.07);
-        text-align: center;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-        margin-bottom: 15px;
-        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        background: rgba(255, 255, 255, 0.08) !important;
+        backdrop-filter: blur(12px) !important;
+        border-radius: 20px !important;
+        padding: 20px !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        text-align: center !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
+        margin-bottom: 15px !important;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
     }
     .metric-card:hover {
-        transform: translateY(-2px);
-        border-color: rgba(100, 255, 218, 0.25);
-        box-shadow: 0 8px 30px rgba(100, 255, 218, 0.05);
+        transform: translateY(-2px) !important;
+        border-color: rgba(255,255,255,0.2) !important;
     }
     .metric-label {
-        font-size: 0.8rem;
-        color: #94a3b8;
-        text-transform: uppercase;
-        letter-spacing: 1.5px;
-        font-weight: 600;
-        margin-bottom: 4px;
+        font-size: 0.8rem !important;
+        color: rgba(255, 255, 255, 0.6) !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1.5px !important;
+        font-weight: 600 !important;
+        margin-bottom: 4px !important;
     }
     .metric-value {
-        font-family: 'Space Grotesk', sans-serif;
-        font-size: 2.4rem;
-        font-weight: 700;
-        color: #64ffda;
-        letter-spacing: -0.03em;
-    }
-    .status-badge {
-        display: inline-block;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 0.72rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    .badge-sent {
-        background-color: rgba(52, 211, 153, 0.1);
-        color: #34d399;
-        border: 1px solid rgba(52, 211, 153, 0.2);
-    }
-    .badge-unsent {
-        background-color: rgba(248, 113, 113, 0.1);
-        color: #f87171;
-        border: 1px solid rgba(248, 113, 113, 0.2);
-    }
-    .badge-duplicate {
-        background-color: rgba(251, 191, 36, 0.1);
-        color: #fbbf24;
-        border: 1px solid rgba(251, 191, 36, 0.2);
-    }
-    .badge-unique {
-        background-color: rgba(59, 130, 246, 0.1);
-        color: #3b82f6;
-        border: 1px solid rgba(59, 130, 246, 0.2);
+        font-family: 'Playfair Display', serif !important;
+        font-size: 2.2rem !important;
+        font-weight: 700 !important;
+        color: #ffffff !important;
+        letter-spacing: -0.01em !important;
     }
     
-    /* Section dividers */
-    .section-header {
-        font-family: 'Space Grotesk', sans-serif;
-        font-size: 1.6rem;
-        font-weight: 600;
-        margin-top: 10px;
-        margin-bottom: 20px;
-        color: #ffffff;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        padding-bottom: 8px;
-        letter-spacing: -0.01em;
+    .status-badge {
+        display: inline-block !important;
+        padding: 4px 12px !important;
+        border-radius: 20px !important;
+        font-size: 0.72rem !important;
+        font-weight: 600 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
     }
-    /* Logo styling */
-    .sidebar-logo {
-        text-align: center;
-        padding-bottom: 24px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-        margin-bottom: 24px;
+    .badge-sent {
+        background-color: rgba(52, 211, 153, 0.12) !important;
+        color: #34d399 !important;
+        border: 1px solid rgba(52, 211, 153, 0.25) !important;
+    }
+    .badge-unsent {
+        background-color: rgba(248, 113, 113, 0.12) !important;
+        color: #f87171 !important;
+        border: 1px solid rgba(248, 113, 113, 0.25) !important;
     }
 
     /* ── Topic Search Bar ── */
     .search-container {
-        background: linear-gradient(135deg, rgba(100, 255, 218, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        border-radius: 16px;
-        padding: 24px;
-        margin-bottom: 20px;
-        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.15);
+        background: rgba(255, 255, 255, 0.08) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 20px !important;
+        padding: 24px !important;
+        margin-bottom: 20px !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
     }
     .search-label {
-        font-family: 'Space Grotesk', sans-serif;
-        font-size: 1.3rem;
-        font-weight: 600;
-        color: #ffffff;
-        margin-bottom: 6px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
+        font-family: 'Playfair Display', serif !important;
+        font-size: 1.3rem !important;
+        font-weight: 600 !important;
+        color: #ffffff !important;
+        margin-bottom: 6px !important;
     }
     .search-hint {
-        font-size: 0.88rem;
-        color: #94a3b8;
-        line-height: 1.5;
+        font-size: 0.88rem !important;
+        color: rgba(255, 255, 255, 0.7) !important;
+        line-height: 1.5 !important;
     }
 
     /* ── Chat Bubbles ── */
     .chat-wrapper {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-        padding: 10px 0;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 16px !important;
+        padding: 10px 0 !important;
     }
     .chat-bubble {
-        padding: 14px 18px;
-        border-radius: 16px;
-        max-width: 80%;
-        line-height: 1.6;
-        font-size: 0.95rem;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        margin-bottom: 8px;
+        padding: 14px 18px !important;
+        border-radius: 20px !important;
+        max-width: 85% !important;
+        line-height: 1.6 !important;
+        font-size: 0.95rem !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08) !important;
+        margin-bottom: 8px !important;
+        color: #ffffff !important;
     }
     .chat-bubble-user {
-        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-        color: #ffffff;
-        align-self: flex-end;
-        margin-left: auto;
-        border-bottom-right-radius: 4px;
-        box-shadow: 0 4px 20px rgba(37, 99, 235, 0.25);
+        background: linear-gradient(135deg, #b55e2a 0%, #8c471d 100%) !important;
+        align-self: flex-end !important;
+        margin-left: auto !important;
+        border-bottom-right-radius: 4px !important;
     }
     .chat-bubble-assistant {
-        background: rgba(20, 26, 40, 0.7);
-        color: #f1f5f9;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        backdrop-filter: blur(10px);
-        align-self: flex-start;
-        border-bottom-left-radius: 4px;
+        background: rgba(255, 255, 255, 0.1) !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        backdrop-filter: blur(10px) !important;
+        align-self: flex-start !important;
+        border-bottom-left-radius: 4px !important;
     }
     .chat-role-label {
-        font-family: 'Space Grotesk', sans-serif;
-        font-size: 0.75rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        margin-bottom: 6px;
-        color: #64ffda;
-    }
-    .chat-bubble-user .chat-role-label {
-        color: #93c5fd;
+        font-size: 0.75rem !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1px !important;
+        margin-bottom: 6px !important;
+        color: #ffffff !important;
+        opacity: 0.8 !important;
     }
     .chat-empty-state {
-        text-align: center;
-        padding: 60px 24px;
-        color: #94a3b8;
+        text-align: center !important;
+        padding: 60px 24px !important;
+        color: rgba(255,255,255,0.7) !important;
     }
     .chat-empty-icon {
-        font-size: 3.5rem;
-        margin-bottom: 16px;
-        opacity: 0.8;
+        font-size: 3.5rem !important;
+        margin-bottom: 16px !important;
+        opacity: 0.8 !important;
     }
 
-    /* ── Article card ── */
-    .article-card {
-        background: rgba(20, 26, 40, 0.5) !important;
-        border: 1px solid rgba(255, 255, 255, 0.06) !important;
-        backdrop-filter: blur(10px);
-        border-radius: 14px;
-        padding: 22px;
-        margin-bottom: 18px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-    }
-    .article-card:hover {
-        transform: translateY(-2px);
-        border-color: rgba(100, 255, 218, 0.25) !important;
-        box-shadow: 0 8px 30px rgba(100, 255, 218, 0.06);
+    /* ── Article Card styling ── */
+    .feed-card {
+        background: rgba(255, 255, 255, 0.95) !important;
+        border-radius: 24px !important;
+        border: 1px solid rgba(255,255,255,0.4) !important;
+        padding: 22px !important;
+        color: #0f172a !important;
+        margin-bottom: 16px !important;
+        position: relative !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.06) !important;
+        transition: all 0.25s ease !important;
     }
     
-    /* Source Tags */
-    .source-tag {
-        display: inline-block;
-        padding: 2px 10px;
-        border-radius: 12px;
-        font-size: 0.72rem;
-        font-weight: 600;
-        margin-right: 8px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        border: 1px solid rgba(255, 255, 255, 0.15);
+    .feed-card:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12) !important;
+    }
+    
+    .feed-card-header {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        margin-bottom: 10px !important;
+    }
+    
+    .feed-card-badge {
+        font-size: 0.65rem !important;
+        background: rgba(181, 94, 42, 0.1) !important;
+        color: #b55e2a !important;
+        padding: 3px 10px !important;
+        border-radius: 12px !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+    }
+    
+    .feed-card-time {
+        font-size: 0.75rem !important;
+        color: #64748b !important;
+    }
+    
+    .feed-card-title {
+        font-family: 'Plus Jakarta Sans', sans-serif !important;
+        font-size: 1.2rem !important;
+        font-weight: 700 !important;
+        color: #0f172a !important;
+        margin: 0 0 10px 0 !important;
+        line-height: 1.35 !important;
+    }
+    
+    .feed-card-desc {
+        font-size: 0.85rem !important;
+        color: #334155 !important;
+        margin: 0 0 14px 0 !important;
+        line-height: 1.5 !important;
+        white-space: pre-line !important;
+    }
+    
+    .feed-card-footer {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        border-top: 1px solid rgba(0,0,0,0.05) !important;
+        padding-top: 12px !important;
+        margin-bottom: 8px !important;
+    }
+
+    /* Simulated Audio Player Detail View */
+    .audio-player-box {
+        background: rgba(255, 255, 255, 0.08) !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        border-radius: 24px !important;
+        padding: 24px !important;
+        backdrop-filter: blur(16px) !important;
+        margin-bottom: 20px !important;
+    }
+    
+    .waveform-visualizer {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        height: 60px !important;
+        margin: 20px 0 !important;
+        padding: 0 15px !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+        border-radius: 16px !important;
+    }
+    
+    .waveform-bar {
+        width: 3px !important;
+        border-radius: 2px !important;
+        background: rgba(255,255,255,0.2) !important;
+        transition: height 0.3s ease !important;
+    }
+    
+    .waveform-bar.active {
+        background: #b55e2a !important;
+    }
+    
+    .duration-label {
+        font-size: 0.75rem !important;
+        color: rgba(255,255,255,0.6) !important;
+        font-family: monospace !important;
     }
 
     /* Style default Streamlit buttons to look like rounded pills */
-    div.stButton > button:not([kind="primary"]):not([class*="Primary"]):not([class*="primary"]) {
+    div.stButton > button {
         border-radius: 24px !important;
-        background-color: rgba(100, 255, 218, 0.04) !important;
-        color: #64ffda !important;
-        border: 1px solid rgba(100, 255, 218, 0.15) !important;
         font-weight: 600 !important;
         font-size: 0.85rem !important;
         padding: 6px 20px !important;
-        letter-spacing: 0.5px;
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
-    div.stButton > button:not([kind="primary"]):not([class*="Primary"]):not([class*="primary"]):hover {
-        background-color: rgba(100, 255, 218, 0.12) !important;
-        border-color: #64ffda !important;
+    
+    /* Primary buttons (matches orange details) */
+    div.stButton > button[kind="primary"], div.stButton > button[class*="primary"] {
+        background-color: #b55e2a !important;
+        border-color: #b55e2a !important;
         color: #ffffff !important;
-        transform: scale(1.02);
+    }
+    div.stButton > button[kind="primary"]:hover, div.stButton > button[class*="primary"]:hover {
+        background-color: #9c4f22 !important;
+        border-color: #9c4f22 !important;
+        transform: translateY(-1px);
     }
     
-    /* Primary buttons */
-    div.stButton > button[kind="primary"], div.stButton > button[class*="primary"] {
-        border-radius: 24px !important;
-        font-weight: 600 !important;
-        letter-spacing: 0.5px;
-        padding: 6px 20px !important;
-        transition: all 0.2s ease-in-out !important;
+    /* Secondary buttons (glassy outline style) */
+    div.stButton > button:not([kind="primary"]):not([class*="Primary"]):not([class*="primary"]) {
+        background-color: rgba(255, 255, 255, 0.08) !important;
+        color: #ffffff !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    }
+    div.stButton > button:not([kind="primary"]):not([class*="Primary"]):not([class*="primary"]):hover {
+        background-color: rgba(255, 255, 255, 0.15) !important;
+        border-color: rgba(255, 255, 255, 0.3) !important;
+        transform: translateY(-1px);
     }
     
     /* Expanders styling */
     .streamlit-expanderHeader {
-        background-color: rgba(20, 26, 40, 0.4) !important;
-        border: 1px solid rgba(255, 255, 255, 0.05) !important;
-        border-radius: 8px !important;
-        font-family: 'Space Grotesk', sans-serif !important;
-        color: #e2e8f0 !important;
+        background-color: rgba(255,255,255,0.05) !important;
+        border: 1px solid rgba(255,255,255,0.1) !important;
+        border-radius: 12px !important;
+        color: #ffffff !important;
     }
     .streamlit-expanderContent {
-        border-left: 1px solid rgba(255, 255, 255, 0.05) !important;
-        border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
-        background-color: rgba(15, 20, 32, 0.3) !important;
+        border-left: 1px solid rgba(255,255,255,0.1) !important;
+        border-right: 1px solid rgba(255,255,255,0.1) !important;
+        border-bottom: 1px solid rgba(255,255,255,0.1) !important;
+        background-color: rgba(0,0,0,0.1) !important;
+        border-radius: 0 0 12px 12px !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
 def render_sidebar_logo():
-    st.markdown("""
-    <div class="sidebar-logo">
-        <h1 style="font-size: 1.8rem; margin: 0; color: #64ffda;">📰 DigestHub</h1>
-        <p style="font-size: 0.85rem; color: #8892b0; margin: 5px 0 0 0;">RSS AI Summarizer &amp; Dispatcher</p>
-    </div>
-    """, unsafe_allow_html=True)
+    html_content = (
+        '<div style="text-align: center; padding-bottom: 24px; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 24px;">'
+        '<h1 style="font-size: 1.8rem; margin: 0; color: #ffffff;">DigestHub</h1>'
+        '<p style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin: 5px 0 0 0;">RSS AI Summarizer &amp; Dispatcher</p>'
+        '</div>'
+    )
+    st.markdown(html_content, unsafe_allow_html=True)
 
 def render_metric_card(label, value):
-    st.markdown(f"""
-    <div class="metric-card">
-        <div class="metric-label">{label}</div>
-        <div class="metric-value">{value}</div>
-    </div>
-    """, unsafe_allow_html=True)
+    html_content = (
+        '<div class="metric-card">'
+        f'<div class="metric-label">{label}</div>'
+        f'<div class="metric-value">{value}</div>'
+        '</div>'
+    )
+    st.markdown(html_content, unsafe_allow_html=True)
 
 def render_section_header(title):
-    st.markdown(f'<div class="section-header">{title}</div>', unsafe_allow_html=True)
+    html_content = (
+        '<h2 style="font-family: \'Playfair Display\', serif; font-size: 1.8rem; margin-top: 10px; margin-bottom: 20px; color: #ffffff; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">'
+        f'{title}'
+        '</h2>'
+    )
+    st.markdown(html_content, unsafe_allow_html=True)
 
 def render_delivery_status(is_sent):
     status_text = "SENT" if is_sent else "NOT SENT"
     badge_class = "badge-sent" if is_sent else "badge-unsent"
-    st.markdown(f"**Delivery Status**: <span class='status-badge {badge_class}'>{status_text}</span>", unsafe_allow_html=True)
-
+    html_content = f"**Delivery Status**: <span class='status-badge {badge_class}'>{status_text}</span>"
+    st.markdown(html_content, unsafe_allow_html=True)
 
 def render_search_bar():
-    """Render the prominent topic search container."""
-    st.markdown("""
-    <div class="search-container">
-        <div class="search-label">🔍 Search News by Topic</div>
-        <div class="search-hint">
-            Type a topic to find relevant articles. The AI chatbot will answer questions about these results.
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
+    html_content = (
+        '<div class="search-container">'
+        '<div class="search-label">Search News by Topic</div>'
+        '<div class="search-hint">'
+        'Type a topic to find relevant articles. The AI chatbot will answer questions about these results.'
+        '</div>'
+        '</div>'
+    )
+    st.markdown(html_content, unsafe_allow_html=True)
 
 def render_chat_message(role: str, content: str):
-    """Render a single chat message bubble."""
     if role == "user":
         label = "You"
         bubble_class = "chat-bubble-user"
     else:
-        label = "🤖 DigestBot"
+        label = "DigestBot"
         bubble_class = "chat-bubble-assistant"
 
-    st.markdown(f"""
-    <div class="chat-bubble {bubble_class}">
-        <div class="chat-role-label">{label}</div>
-        {content}
-    </div>
-    """, unsafe_allow_html=True)
-
+    formatted_content = format_to_html(content)
+    html_content = (
+        f'<div class="chat-bubble {bubble_class}">'
+        f'<div class="chat-role-label">{label}</div>'
+        f'{formatted_content}'
+        f'</div>'
+    )
+    st.markdown(html_content, unsafe_allow_html=True)
 
 def render_chat_empty_state(has_topic: bool):
-    """Render empty state for the chatbot panel."""
     if not has_topic:
-        st.markdown("""
-        <div class="chat-empty-state">
-            <div class="chat-empty-icon">🔍</div>
-            <h3 style="color: #e2e8f0; margin-bottom: 8px;">Search a topic first</h3>
-            <p>Use the search bar above to find articles on a topic.<br>
-            Then come back here to ask questions about them!</p>
-        </div>
-        """, unsafe_allow_html=True)
+        html_content = (
+            '<div class="chat-empty-state">'
+            '<div class="chat-empty-icon"></div>'
+            '<h3 style="color: #ffffff; margin-bottom: 8px;">Search a topic first</h3>'
+            '<p>Use the search bar above to find articles on a topic.<br>'
+            'Then come back here to ask questions about them!</p>'
+            '</div>'
+        )
     else:
-        st.markdown("""
-        <div class="chat-empty-state">
-            <div class="chat-empty-icon">💬</div>
-            <h3 style="color: #e2e8f0; margin-bottom: 8px;">Ask me anything!</h3>
-            <p>I have the topic articles loaded as context.<br>
-            Ask a question below to get started.</p>
-        </div>
-        """, unsafe_allow_html=True)
+        html_content = (
+            '<div class="chat-empty-state">'
+            '<div class="chat-empty-icon"></div>'
+            '<h3 style="color: #ffffff; margin-bottom: 8px;">Ask me anything!</h3>'
+            '<p>I have the topic articles loaded as context.<br>'
+            'Ask a question below to get started.</p>'
+            '</div>'
+        )
+    st.markdown(html_content, unsafe_allow_html=True)
 
+# ─────────────────────────────────────────────────────────────────────────────
+# NEW MOCKUP SPECIFIC RENDERERS
+# ─────────────────────────────────────────────────────────────────────────────
+
+def render_category_card(badge, title, description, icon, is_selected, key):
+    """Render category onboarding selection card styled like Screen 1 of reference image."""
+    card_class = "category-item selected" if is_selected else "category-item"
+    border_style = "border: 2px solid #b55e2a;" if is_selected else ""
+    html_content = (
+        f'<div class="{card_class}" style="{border_style}">'
+        f'<div class="category-badge-pill">{badge}</div>'
+        f'<div class="category-icon-container">{icon}</div>'
+        f'<h4 class="category-card-title">{title}</h4>'
+        f'<p class="category-card-desc">{description}</p>'
+        f'</div>'
+    )
+    st.markdown(html_content, unsafe_allow_html=True)
+    btn_label = "✓ Selected" if is_selected else "Select"
+    return st.button(btn_label, key=key, use_container_width=True, type="primary" if is_selected else "secondary")
+
+
+
+def render_hero_headlines_card():
+    """Render daily breaking headlines hero panel styled like Screen 2 of reference image."""
+    html_content = (
+        '<div class="hero-headlines-card">'
+        '<div class="hero-content">'
+        '<div class="hero-tag">Your daily</div>'
+        '<h3 class="hero-title">Headlines</h3>'
+        '<p class="hero-desc">Stay informed with real-time updates from trusted global news sources</p>'
+        '</div>'
+        '<div class="hero-graphic">'
+        '</div>'
+        '</div>'
+    )
+    st.markdown(html_content, unsafe_allow_html=True)
+
+@st.cache_data(show_spinner=False)
+def generate_tts_audio_cached(text: str) -> bytes:
+    from gtts import gTTS
+    import io
+    tts = gTTS(text=text, lang='en')
+    audio_fp = io.BytesIO()
+    tts.write_to_fp(audio_fp)
+    return audio_fp.getvalue()
+
+def render_audio_player(title, source, pub_date_str, text_content=None):
+    """Render beautiful simulated audio visualizer details styled like Screen 3 of reference image."""
+    bar_heights = [15, 30, 45, 20, 10, 25, 40, 50, 35, 20, 15, 30, 45, 60, 55, 40, 30, 25, 10, 20, 35, 50, 45, 30, 15]
+    bars_html = "".join([f'<div class="waveform-bar active" style="height: {h}px;"></div>' if idx < 12 else f'<div class="waveform-bar" style="height: {h}px;"></div>' for idx, h in enumerate(bar_heights)])
+    
+    html_top = (
+        '<div style="text-align: center; margin-bottom: 20px;">'
+        '<div style="background: linear-gradient(135deg, #153930, #b55e2a); height: 200px; border-radius: 20px; display: flex; align-items: center; justify-content: center; position: relative; box-shadow: 0 8px 25px rgba(0,0,0,0.2);">'
+        '<div style="font-size: 4rem; background: rgba(255,255,255,0.2); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); border: 2px solid white; transition: transform 0.2s;">AI</div>'
+        '<div style="position: absolute; bottom: 12px; left: 16px; font-size: 0.8rem; background: rgba(0,0,0,0.5); padding: 4px 10px; border-radius: 12px; color: white;">AI Voice Reader</div>'
+        '</div>'
+        '</div>'
+    )
+    st.markdown(html_top, unsafe_allow_html=True)
+    
+    if text_content:
+        import re
+        
+        # Clean text content from HTML tags and Markdown formatting
+        clean_text = text_content or ""
+        clean_text = re.sub(r'<[^>]+>', '', clean_text)
+        clean_text = re.sub(r'\*+', '', clean_text)
+        clean_text = re.sub(r'#+', '', clean_text)
+        clean_text = clean_text[:1500].strip()
+        
+        if clean_text:
+            try:
+                st.markdown("<p style='text-align: center; font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-bottom: 5px;'>Click play below to listen to the AI Audio Summary</p>", unsafe_allow_html=True)
+                audio_bytes = generate_tts_audio_cached(clean_text)
+                st.audio(audio_bytes, format="audio/mp3")
+                st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
+            except Exception as e:
+                st.error(f"Failed to generate voice playback: {e}")
+                
+    html_player = (
+        '<div class="audio-player-box">'
+        '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">'
+        f'<span class="feed-card-badge">{source}</span>'
+        f'<span style="font-size: 0.75rem; color: rgba(255,255,255,0.6);">{pub_date_str}</span>'
+        '</div>'
+        f'<h3 style="margin-top: 5px; margin-bottom: 15px; color: white !important; font-family: \'Playfair Display\', serif;">{title}</h3>'
+        '<div class="waveform-visualizer">'
+        '<span class="duration-label">Active</span>'
+        f'<div style="display: flex; gap: 3px; align-items: center; flex-grow: 1; justify-content: center; margin: 0 15px;">{bars_html}</div>'
+        '<span class="duration-label">Playing</span>'
+        '</div>'
+        '</div>'
+    )
+    st.markdown(html_player, unsafe_allow_html=True)
+
+def format_to_html(text: str) -> str:
+    """Convert markdown formatting (**bold**, bullet lists, and numbered lists) into clean HTML."""
+    import re
+    # Replace markdown bold **text** with <b>text</b>
+    text = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', text)
+    
+    lines = text.split('\n')
+    
+    # Check if there are any list markers (bullets or numbered)
+    has_list = False
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith(('- ', '* ')) or re.match(r'^\d+\.\s', stripped):
+            has_list = True
+            break
+            
+    if not has_list:
+        return text.replace('\n', '<br>')
+
+    # Convert list items to HTML structures (ul or ol)
+    formatted_lines = []
+    current_list_type = None  # None, 'ul', or 'ol'
+    
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            continue
+            
+        # Match bullets
+        if stripped.startswith(('- ', '* ')):
+            if current_list_type == 'ol':
+                formatted_lines.append('</ol>')
+                current_list_type = None
+            if current_list_type is None:
+                formatted_lines.append('<ul style="margin: 4px 0; padding-left: 20px; list-style-type: disc;">')
+                current_list_type = 'ul'
+            content = stripped[2:].strip()
+            formatted_lines.append(f'<li style="margin-bottom: 6px;">{content}</li>')
+            
+        # Match numbered list (e.g. 1. )
+        elif re.match(r'^\d+\.\s', stripped):
+            if current_list_type == 'ul':
+                formatted_lines.append('</ul>')
+                current_list_type = None
+            if current_list_type is None:
+                formatted_lines.append('<ol style="margin: 4px 0; padding-left: 20px;">')
+                current_list_type = 'ol'
+            # Strip the leading digits, dot and whitespace
+            content = re.sub(r'^\d+\.\s*', '', stripped)
+            formatted_lines.append(f'<li style="margin-bottom: 6px;">{content}</li>')
+            
+        # Normal text
+        else:
+            if current_list_type == 'ul':
+                formatted_lines.append('</ul>')
+                current_list_type = None
+            elif current_list_type == 'ol':
+                formatted_lines.append('</ol>')
+                current_list_type = None
+            formatted_lines.append(stripped)
+            
+    if current_list_type == 'ul':
+        formatted_lines.append('</ul>')
+    elif current_list_type == 'ol':
+        formatted_lines.append('</ol>')
+        
+    return '\n'.join(formatted_lines)
+
+def render_feed_article_card(a, index, current_format="TL;DR"):
+    """Render high-end feed article card styled like Screen 2 / 3 of reference image."""
+    from datetime import datetime
+    pub_date = a.get("published_date")
+    time_str = "Recent"
+    if pub_date:
+        diff = datetime.utcnow() - pub_date
+        hours = int(diff.total_seconds() / 3600)
+        if hours < 1:
+            rel_time = "Just now"
+        elif hours == 1:
+            rel_time = "1 Hour ago"
+        elif hours < 24:
+            rel_time = f"{hours} Hours ago"
+        else:
+            rel_time = pub_date.strftime("%b %d")
+        
+        exact_time = pub_date.strftime("%b %d, %Y %H:%M")
+        time_str = f"{rel_time} ({exact_time})"
+            
+    if current_format == "Bullets":
+        text_content = a.get("bullets_content") or a.get("description") or ""
+        if a.get("bullets_content"):
+            short_text = text_content
+        else:
+            words = text_content.split()
+            short_text = " ".join(words[:35]) + "..." if len(words) > 35 else text_content
+    elif current_format == "5 Ws":
+        text_content = a.get("five_ws_content") or a.get("description") or ""
+        if a.get("five_ws_content"):
+            short_text = text_content
+        else:
+            words = text_content.split()
+            short_text = " ".join(words[:35]) + "..." if len(words) > 35 else text_content
+    else:
+        text_content = a.get("content") or a.get("description") or ""
+        words = text_content.split()
+        short_text = " ".join(words[:35]) + "..." if len(words) > 35 else text_content
+        
+    formatted_desc = format_to_html(short_text)
+    safe_id = abs(int(a.get("id") or hash(a["url"])))
+    
+    html_content = (
+        '<div class="feed-card">'
+        '<div class="feed-card-header">'
+        f'<span class="feed-card-badge">{a["source"]}</span>'
+        f'<span class="feed-card-time">{time_str}</span>'
+        '</div>'
+        f'<h4 class="feed-card-title">{a["title"]}</h4>'
+        f'<div class="feed-card-desc">{formatted_desc}</div>'
+        '<div class="feed-card-footer">'
+        f'<a href="/?read={safe_id}" target="_blank" style="font-size: 0.8rem; color: #b55e2a; text-decoration: none; font-weight: 700;">Original Source Link</a>'
+        '</div>'
+        '</div>'
+    )
+    st.markdown(html_content, unsafe_allow_html=True)
+    
+    col_play, col_chat = st.columns(2)
+    with col_play:
+        play_clicked = st.button("Listen / Read", key=f"feed_play_{safe_id}_{index}", use_container_width=True)
+    with col_chat:
+        chat_clicked = st.button("Discuss", key=f"feed_discuss_{safe_id}_{index}", use_container_width=True)
+        
+    return play_clicked, chat_clicked
 
 def render_topic_articles(articles: list[dict], ask_fn=None):
-    """Render article cards in sequence: Headline → Summary → Link → Chat.
-
-    ask_fn: callable(messages, question, articles, topic) -> str
-             Pass app.ask_chatbot so ui.py doesn't need to import it.
     """
-    import re
-
-    def _truncate_to_words(text: str, min_words: int = 100, max_words: int = 150) -> str:
-        """Truncate text to between min_words and max_words, ending at a sentence boundary if possible."""
-        words = text.split()
-        if len(words) <= max_words:
-            return text
-        truncated = " ".join(words[:max_words])
-        for i in range(len(truncated) - 1, 0, -1):
-            if truncated[i] in ".!?" and i > len(" ".join(words[:min_words])):
-                return truncated[: i + 1]
-        return truncated + "..."
-
-    def _markdown_to_html(text: str) -> str:
-        """Convert markdown paragraphs, bullets, and numbered lists to clean HTML for cards."""
-        clean = re.sub(r"<[^>]+>", "", text)
-        lines = clean.split("\n")
-        in_list = False
-        list_tag = ""
-        html_parts = []
-        
-        for line in lines:
-            line_stripped = line.strip()
-            if not line_stripped:
-                continue
-                
-            # Bullet list detection
-            if line_stripped.startswith("- ") or line_stripped.startswith("* "):
-                if not in_list:
-                    html_parts.append("<ul style='margin: 8px 0 12px 18px; padding: 0; color: #a8b2d8;'>")
-                    in_list = True
-                    list_tag = "ul"
-                elif list_tag == "ol":
-                    html_parts.append("</ol><ul style='margin: 8px 0 12px 18px; padding: 0; color: #a8b2d8;'>")
-                    list_tag = "ul"
-                html_parts.append(f"<li style='margin-bottom: 6px; font-size: 0.9rem; line-height: 1.5;'>{line_stripped[2:]}</li>")
-                
-            # Numbered list detection
-            elif re.match(r"^\d+\.\s+", line_stripped):
-                content = re.sub(r"^\d+\.\s+", "", line_stripped)
-                if not in_list:
-                    html_parts.append("<ol style='margin: 8px 0 12px 18px; padding: 0; color: #a8b2d8;'>")
-                    in_list = True
-                    list_tag = "ol"
-                elif list_tag == "ul":
-                    html_parts.append("</ul><ol style='margin: 8px 0 12px 18px; padding: 0; color: #a8b2d8;'>")
-                    list_tag = "ol"
-                html_parts.append(f"<li style='margin-bottom: 6px; font-size: 0.9rem; line-height: 1.5;'>{content}</li>")
-                
-            # Plain paragraph
-            else:
-                if in_list:
-                    html_parts.append(f"</{list_tag}>")
-                    in_list = False
-                html_parts.append(f"<p style='margin: 0 0 12px 0; font-size: 0.92rem; line-height: 1.6; color: #a8b2d8;'>{line_stripped}</p>")
-                
-        if in_list:
-            html_parts.append(f"</{list_tag}>")
-            
-        return "".join(html_parts)
-
-    def get_source_color(source: str) -> str:
-        """Return custom styled CSS border/background color scheme based on feed source."""
-        source_lower = source.lower()
-        if "reuters" in source_lower:
-            return "background-color: rgba(59, 130, 246, 0.1); color: #60a5fa; border-color: rgba(59, 130, 246, 0.25);"
-        elif "economic times" in source_lower or "economictimes" in source_lower:
-            return "background-color: rgba(16, 185, 129, 0.1); color: #34d399; border-color: rgba(16, 185, 129, 0.25);"
-        elif "cnbc" in source_lower:
-            return "background-color: rgba(239, 68, 68, 0.1); color: #f87171; border-color: rgba(239, 68, 68, 0.25);"
-        elif "bloomberg" in source_lower:
-            return "background-color: rgba(245, 158, 11, 0.1); color: #fbbf24; border-color: rgba(245, 158, 11, 0.25);"
-        elif "bbc" in source_lower:
-            return "background-color: rgba(239, 68, 68, 0.15); color: #f87171; border-color: rgba(239, 68, 68, 0.3);"
-        elif "times of india" in source_lower or "toi" in source_lower:
-            return "background-color: rgba(139, 92, 246, 0.1); color: #a78bfa; border-color: rgba(139, 92, 246, 0.25);"
-        elif "the hindu" in source_lower:
-            return "background-color: rgba(14, 165, 233, 0.1); color: #38bdf8; border-color: rgba(14, 165, 233, 0.25);"
-        elif "moneycontrol" in source_lower:
-            return "background-color: rgba(236, 72, 153, 0.1); color: #f472b6; border-color: rgba(236, 72, 153, 0.25);"
-        elif "yahoo" in source_lower:
-            return "background-color: rgba(109, 40, 217, 0.1); color: #c084fc; border-color: rgba(109, 40, 217, 0.25);"
-        elif "marketwatch" in source_lower:
-            return "background-color: rgba(20, 184, 166, 0.1); color: #2dd4bf; border-color: rgba(20, 184, 166, 0.25);"
-        elif "hindustan times" in source_lower:
-            return "background-color: rgba(244, 63, 94, 0.1); color: #fb7185; border-color: rgba(244, 63, 94, 0.25);"
-        elif "ndtv" in source_lower:
-            return "background-color: rgba(249, 115, 22, 0.1); color: #ff9d43; border-color: rgba(249, 115, 22, 0.25);"
-        elif "guardian" in source_lower:
-            return "background-color: rgba(4, 120, 87, 0.1); color: #34d399; border-color: rgba(4, 120, 87, 0.25);"
-        else:
-            return "background-color: rgba(100, 255, 218, 0.08); color: #64ffda; border-color: rgba(100, 255, 218, 0.2);"
-
+    Deprecated in favor of render_feed_article_card for custom layouts,
+    but kept for backwards compatibility with analytics and search loops.
+    """
     summary_format = st.session_state.get("summary_format", "TL;DR")
-
-    for a in articles:
-        article_id = a.get("id") or abs(hash(a["url"]))
-        safe_id = abs(int(article_id))
-
-        # Retrieve text according to current user format preference
-        if summary_format == "Bullets":
-            text_to_display = a.get("bullets_content") or a.get("description") or ""
-        elif summary_format == "5 Ws":
-            text_to_display = a.get("five_ws_content") or a.get("description") or ""
-        else:
-            text_to_display = a.get("content") or a.get("description") or ""
-            
-        summary_html = _markdown_to_html(text_to_display)
-        pub = a["published_date"].strftime("%b %d, %Y %H:%M") if a.get("published_date") else "N/A"
-
-        source_style = get_source_color(a['source'])
-        source_badge = f"<span class='source-tag' style='{source_style}'>{a['source']}</span>"
-
-        # ── 1. Article Headline Card ──────────────────────────────────────────
-        st.markdown(f"""
-        <div class="article-card" style="margin-bottom:0;padding-bottom:18px;">
-            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-                {source_badge}
-                <span style="font-size:0.75rem;color:#8892b0;">{pub}</span>
-            </div>
-            <h4 style="margin:0 0 10px 0;color:#ffffff;font-size:1.2rem;line-height:1.4;">{a['title']}</h4>
-            <div style="margin:0 0 14px 0;">{summary_html}</div>
-            <a href="/?read={safe_id}" target="_blank"
-               style="font-size:0.85rem;color:#64ffda;text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:4px;">
-                🔗 Read full article <span style="font-size:0.75rem;">→</span>
-            </a>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # ── 2. Chat about this article ───────────────────────────────────────
-        chat_key = f"art_chat_{safe_id}"
-        if chat_key not in st.session_state:
-            st.session_state[chat_key] = []
-
-        with st.expander("💬 Chat about this article"):
-            # Show existing conversation
-            for msg in st.session_state[chat_key]:
-                if msg["role"] == "user":
-                    st.markdown(
-                        f"<div style='background:rgba(37,99,235,0.15);border-radius:10px;border:1px solid rgba(37,99,235,0.25);"
-                        f"padding:10px 14px;margin:6px 0;font-size:0.9rem;color:#f1f5f9;'>"
-                        f"👤 <b>You:</b> {msg['content']}</div>",
-                        unsafe_allow_html=True,
-                    )
-                else:
-                    st.markdown(
-                        f"<div style='background:rgba(20,26,40,0.5);border-radius:10px;border:1px solid rgba(255,255,255,0.06);"
-                        f"padding:10px 14px;margin:6px 0;font-size:0.9rem;color:#f1f5f9;'>"
-                        f"🤖 <b>AI:</b> {msg['content']}</div>",
-                        unsafe_allow_html=True,
-                    )
-
-            if ask_fn is None:
-                st.caption("⚠️ Chatbot not connected — ask_fn not supplied.")
-            else:
-                q_key = f"art_q_{safe_id}"
-                user_q = st.text_input(
-                    "Ask about this article:",
-                    key=q_key,
-                    placeholder="e.g. Summarize this / What is the main takeaway?",
-                    label_visibility="collapsed",
-                )
-                if st.button("Ask ➔", key=f"art_btn_{safe_id}", use_container_width=False):
-                    if user_q.strip():
-                        with st.spinner("Thinking..."):
-                            answer = ask_fn(
-                                messages=st.session_state[chat_key],
-                                question=user_q.strip(),
-                                articles=[a],
-                                topic=a["title"],
-                            )
-                        st.session_state[chat_key].append({"role": "user", "content": user_q.strip()})
-                        st.session_state[chat_key].append({"role": "assistant", "content": answer})
-                        st.rerun()
-
+    for idx, a in enumerate(articles):
+        render_feed_article_card(a, idx, summary_format)
         st.markdown("<div style='margin-bottom:18px;'></div>", unsafe_allow_html=True)
 
-
-
-
+def render_app_navigation(active_page):
+    """Render beautiful pill button top navigation."""
+    cols = st.columns([1, 1, 1, 1])
+    pages = [
+        ("feed", "Home Feed"),
+        ("categories", "Categories"),
+        ("chat", "DigestBot"),
+        ("analytics", "Analytics")
+    ]
+    selected_page = active_page
+    for idx, (page_id, label) in enumerate(pages):
+        with cols[idx]:
+            is_active = page_id == active_page
+            btn_type = "primary" if is_active else "secondary"
+            if st.button(label, key=f"nav_btn_{page_id}", use_container_width=True, type=btn_type):
+                selected_page = page_id
+    return selected_page

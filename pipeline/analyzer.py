@@ -27,8 +27,24 @@ class NewsAnalyzer:
             return 0
         return SequenceMatcher(None, text1.lower(), text2.lower()).ratio()
     
+    def _extract_title_keywords(self, title):
+        """Extract set of lowercase alphanumeric keywords from title, excluding common stopwords."""
+        if not title:
+            return set()
+        import re
+        stop_words = {
+            'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
+            'is', 'was', 'are', 'were', 'be', 'been', 'being', 'have', 'has',
+            'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should',
+            'may', 'might', 'must', 'can', 'this', 'that', 'these', 'those',
+            'of', 'with', 'from', 'by', 'it', 'its', 'as', 'about', 'into'
+        }
+        # Normalize: keep alphanumeric words of length > 1
+        words = re.findall(r'\b\w+\b', title.lower())
+        return {w for w in words if w not in stop_words and len(w) > 1}
+
     def find_duplicate_articles(self):
-        """Find and mark duplicate articles"""
+        """Find and mark duplicate articles using an inverted index to speed up comparisons"""
         session = get_session(self.engine)
         
         # Only check articles that haven't been processed yet
@@ -50,13 +66,37 @@ class NewsAnalyzer:
         ).all()
         
         logger.info(f"Comparing {len(unprocessed_articles)} new articles against {len(recent_articles)} recent articles for duplicates...")
+        
+        # Precompute keywords for both lists
+        unprocessed_kws = {a.id: self._extract_title_keywords(a.title) for a in unprocessed_articles}
+        recent_kws = {a.id: self._extract_title_keywords(a.title) for a in recent_articles}
+        
+        # Build inverted index of recent articles: keyword -> list of recent articles
+        keyword_to_recent = {}
+        for a in recent_articles:
+            kws = recent_kws.get(a.id, set())
+            for kw in kws:
+                if kw not in keyword_to_recent:
+                    keyword_to_recent[kw] = []
+                keyword_to_recent[kw].append(a)
+                
         duplicates_found = 0
         
         for i, article1 in enumerate(unprocessed_articles):
-            if i % 20 == 0:
+            if i % 100 == 0:
                 logger.info(f"  Progress: {i}/{len(unprocessed_articles)} articles processed...")
-            
-            for article2 in recent_articles:
+                
+            keywords1 = unprocessed_kws.get(article1.id, set())
+            if not keywords1:
+                continue
+                
+            # Find candidate recent articles that share at least one keyword
+            candidates = set()
+            for kw in keywords1:
+                if kw in keyword_to_recent:
+                    candidates.update(keyword_to_recent[kw])
+                    
+            for article2 in candidates:
                 if article1.id == article2.id:
                     continue
                     
