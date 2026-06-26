@@ -22,10 +22,11 @@ def load_custom_css():
     [data-testid="stMainBlockContainer"],
     section.main,
     .main {
-        background: radial-gradient(circle at 10% 20%, #0c2b24 0%, #112d27 40%, #a25525 85%, #081a17 100%) !important;
+        background-color: #f8fafc !important;
+        background-image: radial-gradient(circle at 50% 0%, #e0f2fe 0%, #f8fafc 100%) !important;
         background-size: cover !important;
         background-attachment: fixed !important;
-        color: #f8fafc !important;
+        color: #334155 !important;
         font-family: 'Plus Jakarta Sans', sans-serif !important;
     }
 
@@ -36,10 +37,23 @@ def load_custom_css():
         background-color: transparent !important;
     }
     
-    /* Override Sidebar background to match the dark theme */
+    /* Override Sidebar background to match the white theme */
     [data-testid="stSidebar"] {
-        background-color: rgba(12, 43, 36, 0.95) !important;
-        border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
+        background-color: #ffffff !important;
+        border-right: 1px solid #e2e8f0 !important;
+    }
+    
+    /* Ensure sidebar text and widgets look beautiful in light mode */
+    [data-testid="stSidebar"] .stMarkdown,
+    [data-testid="stSidebar"] p,
+    [data-testid="stSidebar"] span,
+    [data-testid="stSidebar"] label {
+        color: #334155 !important;
+    }
+    [data-testid="stSidebar"] h1,
+    [data-testid="stSidebar"] h2,
+    [data-testid="stSidebar"] h3 {
+        color: #0f172a !important;
     }
     
     /* Clean, modern scrollbars */
@@ -48,20 +62,20 @@ def load_custom_css():
         height: 8px;
     }
     ::-webkit-scrollbar-track {
-        background: rgba(0,0,0,0.1);
+        background: rgba(0,0,0,0.05);
     }
     ::-webkit-scrollbar-thumb {
-        background: rgba(255,255,255,0.1);
+        background: rgba(0,0,0,0.15);
         border-radius: 4px;
     }
     ::-webkit-scrollbar-thumb:hover {
-        background: rgba(255,255,255,0.25);
+        background: rgba(0,0,0,0.3);
     }
 
     h1, h2, h3, h4, h5, h6 {
-        font-family: 'Playfair Display', serif !important;
+        font-family: 'Plus Jakarta Sans', sans-serif !important;
         font-weight: 700 !important;
-        color: #ffffff !important;
+        color: #0f172a !important;
         letter-spacing: -0.01em;
     }
 
@@ -74,26 +88,26 @@ def load_custom_css():
     }
     
     .category-item {
-        background: rgba(255, 255, 255, 0.95) !important;
-        border: 2px solid transparent !important;
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
         border-radius: 20px !important;
         padding: 20px !important;
         color: #1e293b !important;
         transition: all 0.25s ease !important;
         position: relative !important;
         text-align: left !important;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05) !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03) !important;
     }
     
     .category-item:hover {
         transform: translateY(-2px) !important;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.07) !important;
     }
     
     .category-item.selected {
-        border-color: #b55e2a !important;
+        border-color: #004b87 !important;
         background: #ffffff !important;
-        box-shadow: 0 8px 25px rgba(181, 94, 42, 0.15) !important;
+        box-shadow: 0 8px 25px rgba(0, 75, 135, 0.08) !important;
     }
     
     .category-badge-pill {
@@ -101,7 +115,7 @@ def load_custom_css():
         text-transform: uppercase !important;
         font-weight: 700 !important;
         letter-spacing: 1px !important;
-        color: #b55e2a !important;
+        color: #004b87 !important;
         margin-bottom: 8px !important;
         display: inline-block !important;
     }
@@ -126,15 +140,14 @@ def load_custom_css():
         line-height: 1.35 !important;
     }
 
-
-
     /* Headlines Hero Card */
     .hero-headlines-card {
-        background: linear-gradient(135deg, rgba(255,255,255,0.94) 0%, rgba(248,250,252,0.96) 100%) !important;
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
         border-radius: 24px !important;
         padding: 24px !important;
         margin-bottom: 24px !important;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.08) !important;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.03) !important;
         color: #0f172a !important;
         display: flex !important;
         justify-content: space-between !important;
@@ -148,7 +161,7 @@ def load_custom_css():
     .hero-tag {
         font-size: 0.75rem !important;
         font-weight: 700 !important;
-        color: #b55e2a !important;
+        color: #004b87 !important;
         text-transform: uppercase !important;
         margin-bottom: 6px !important;
         letter-spacing: 0.5px !important;
@@ -189,25 +202,24 @@ def load_custom_css():
         100% { transform: translateY(0px) rotate(0deg); }
     }
 
-    /* Glassmorphism theme elements */
+    /* Light Theme Card Panels */
     .metric-card {
-        background: rgba(255, 255, 255, 0.08) !important;
-        backdrop-filter: blur(12px) !important;
+        background: #ffffff !important;
         border-radius: 20px !important;
         padding: 20px !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border: 1px solid #e2e8f0 !important;
         text-align: center !important;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03) !important;
         margin-bottom: 15px !important;
         transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
     }
     .metric-card:hover {
         transform: translateY(-2px) !important;
-        border-color: rgba(255,255,255,0.2) !important;
+        border-color: #cbd5e1 !important;
     }
     .metric-label {
         font-size: 0.8rem !important;
-        color: rgba(255, 255, 255, 0.6) !important;
+        color: #64748b !important;
         text-transform: uppercase !important;
         letter-spacing: 1.5px !important;
         font-weight: 600 !important;
@@ -217,7 +229,7 @@ def load_custom_css():
         font-family: 'Playfair Display', serif !important;
         font-size: 2.2rem !important;
         font-weight: 700 !important;
-        color: #ffffff !important;
+        color: #0f172a !important;
         letter-spacing: -0.01em !important;
     }
     
@@ -231,35 +243,35 @@ def load_custom_css():
         letter-spacing: 0.5px !important;
     }
     .badge-sent {
-        background-color: rgba(52, 211, 153, 0.12) !important;
-        color: #34d399 !important;
-        border: 1px solid rgba(52, 211, 153, 0.25) !important;
+        background-color: #d1fae5 !important;
+        color: #065f46 !important;
+        border: 1px solid #a7f3d0 !important;
     }
     .badge-unsent {
-        background-color: rgba(248, 113, 113, 0.12) !important;
-        color: #f87171 !important;
-        border: 1px solid rgba(248, 113, 113, 0.25) !important;
+        background-color: #fee2e2 !important;
+        color: #991b1b !important;
+        border: 1px solid #fecaca !important;
     }
 
     /* ── Topic Search Bar ── */
     .search-container {
-        background: rgba(255, 255, 255, 0.08) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
         border-radius: 20px !important;
         padding: 24px !important;
         margin-bottom: 20px !important;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03) !important;
     }
     .search-label {
         font-family: 'Playfair Display', serif !important;
         font-size: 1.3rem !important;
         font-weight: 600 !important;
-        color: #ffffff !important;
+        color: #0f172a !important;
         margin-bottom: 6px !important;
     }
     .search-hint {
         font-size: 0.88rem !important;
-        color: rgba(255, 255, 255, 0.7) !important;
+        color: #475569 !important;
         line-height: 1.5 !important;
     }
 
@@ -276,20 +288,20 @@ def load_custom_css():
         max-width: 85% !important;
         line-height: 1.6 !important;
         font-size: 0.95rem !important;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.08) !important;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.04) !important;
         margin-bottom: 8px !important;
-        color: #ffffff !important;
     }
     .chat-bubble-user {
-        background: linear-gradient(135deg, #b55e2a 0%, #8c471d 100%) !important;
+        background: #004b87 !important;
+        color: #ffffff !important;
         align-self: flex-end !important;
         margin-left: auto !important;
         border-bottom-right-radius: 4px !important;
     }
     .chat-bubble-assistant {
-        background: rgba(255, 255, 255, 0.1) !important;
-        border: 1px solid rgba(255, 255, 255, 0.15) !important;
-        backdrop-filter: blur(10px) !important;
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        color: #1e293b !important;
         align-self: flex-start !important;
         border-bottom-left-radius: 4px !important;
     }
@@ -299,13 +311,13 @@ def load_custom_css():
         text-transform: uppercase !important;
         letter-spacing: 1px !important;
         margin-bottom: 6px !important;
-        color: #ffffff !important;
-        opacity: 0.8 !important;
+        color: inherit !important;
+        opacity: 0.7 !important;
     }
     .chat-empty-state {
         text-align: center !important;
         padding: 60px 24px !important;
-        color: rgba(255,255,255,0.7) !important;
+        color: #64748b !important;
     }
     .chat-empty-icon {
         font-size: 3.5rem !important;
@@ -315,20 +327,21 @@ def load_custom_css():
 
     /* ── Article Card styling ── */
     .feed-card {
-        background: rgba(255, 255, 255, 0.95) !important;
+        background: #ffffff !important;
         border-radius: 24px !important;
-        border: 1px solid rgba(255,255,255,0.4) !important;
+        border: 1px solid #e2e8f0 !important;
         padding: 22px !important;
         color: #0f172a !important;
         margin-bottom: 16px !important;
         position: relative !important;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.06) !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03) !important;
         transition: all 0.25s ease !important;
     }
     
     .feed-card:hover {
         transform: translateY(-2px) !important;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.12) !important;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.06) !important;
+        border-color: #cbd5e1 !important;
     }
     
     .feed-card-header {
@@ -340,8 +353,8 @@ def load_custom_css():
     
     .feed-card-badge {
         font-size: 0.65rem !important;
-        background: rgba(181, 94, 42, 0.1) !important;
-        color: #b55e2a !important;
+        background: #eff6ff !important;
+        color: #1e40af !important;
         padding: 3px 10px !important;
         border-radius: 12px !important;
         font-weight: 700 !important;
@@ -355,8 +368,8 @@ def load_custom_css():
     }
     
     .feed-card-title {
-        font-family: 'Plus Jakarta Sans', sans-serif !important;
-        font-size: 1.2rem !important;
+        font-family: 'Playfair Display', serif !important;
+        font-size: 1.25rem !important;
         font-weight: 700 !important;
         color: #0f172a !important;
         margin: 0 0 10px 0 !important;
@@ -375,19 +388,19 @@ def load_custom_css():
         display: flex !important;
         justify-content: space-between !important;
         align-items: center !important;
-        border-top: 1px solid rgba(0,0,0,0.05) !important;
+        border-top: 1px solid #f1f5f9 !important;
         padding-top: 12px !important;
         margin-bottom: 8px !important;
     }
 
     /* Simulated Audio Player Detail View */
     .audio-player-box {
-        background: rgba(255, 255, 255, 0.08) !important;
-        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
         border-radius: 24px !important;
         padding: 24px !important;
-        backdrop-filter: blur(16px) !important;
         margin-bottom: 20px !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03) !important;
     }
     
     .waveform-visualizer {
@@ -397,24 +410,25 @@ def load_custom_css():
         height: 60px !important;
         margin: 20px 0 !important;
         padding: 0 15px !important;
-        background: rgba(255, 255, 255, 0.05) !important;
+        background: #f8fafc !important;
         border-radius: 16px !important;
+        border: 1px solid #e2e8f0 !important;
     }
     
     .waveform-bar {
         width: 3px !important;
         border-radius: 2px !important;
-        background: rgba(255,255,255,0.2) !important;
+        background: #cbd5e1 !important;
         transition: height 0.3s ease !important;
     }
     
     .waveform-bar.active {
-        background: #b55e2a !important;
+        background: #004b87 !important;
     }
     
     .duration-label {
         font-size: 0.75rem !important;
-        color: rgba(255,255,255,0.6) !important;
+        color: #64748b !important;
         font-family: monospace !important;
     }
 
@@ -427,52 +441,54 @@ def load_custom_css():
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
     
-    /* Primary buttons (matches orange details) */
+    /* Primary buttons (matches brand blue details) */
     div.stButton > button[kind="primary"], div.stButton > button[class*="primary"] {
-        background-color: #b55e2a !important;
-        border-color: #b55e2a !important;
+        background-color: #004b87 !important;
+        border-color: #004b87 !important;
         color: #ffffff !important;
     }
     div.stButton > button[kind="primary"]:hover, div.stButton > button[class*="primary"]:hover {
-        background-color: #9c4f22 !important;
-        border-color: #9c4f22 !important;
+        background-color: #0b3a60 !important;
+        border-color: #0b3a60 !important;
         transform: translateY(-1px);
     }
     
-    /* Secondary buttons (glassy outline style) */
+    /* Secondary buttons (crisp white outline style) */
     div.stButton > button:not([kind="primary"]):not([class*="Primary"]):not([class*="primary"]) {
-        background-color: rgba(255, 255, 255, 0.08) !important;
-        color: #ffffff !important;
-        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        background-color: #ffffff !important;
+        color: #1e293b !important;
+        border: 1px solid #cbd5e1 !important;
     }
     div.stButton > button:not([kind="primary"]):not([class*="Primary"]):not([class*="primary"]):hover {
-        background-color: rgba(255, 255, 255, 0.15) !important;
-        border-color: rgba(255, 255, 255, 0.3) !important;
+        background-color: #f8fafc !important;
+        border-color: #94a3b8 !important;
+        color: #0f172a !important;
         transform: translateY(-1px);
     }
     
     /* Expanders styling */
     .streamlit-expanderHeader {
-        background-color: rgba(255,255,255,0.05) !important;
-        border: 1px solid rgba(255,255,255,0.1) !important;
+        background-color: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
         border-radius: 12px !important;
-        color: #ffffff !important;
+        color: #0f172a !important;
     }
     .streamlit-expanderContent {
-        border-left: 1px solid rgba(255,255,255,0.1) !important;
-        border-right: 1px solid rgba(255,255,255,0.1) !important;
-        border-bottom: 1px solid rgba(255,255,255,0.1) !important;
-        background-color: rgba(0,0,0,0.1) !important;
+        border-left: 1px solid #e2e8f0 !important;
+        border-right: 1px solid #e2e8f0 !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+        background-color: #f8fafc !important;
         border-radius: 0 0 12px 12px !important;
+        color: #334155 !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
 def render_sidebar_logo():
     html_content = (
-        '<div style="text-align: center; padding-bottom: 24px; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 24px;">'
-        '<h1 style="font-size: 1.8rem; margin: 0; color: #ffffff;">DigestHub</h1>'
-        '<p style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin: 5px 0 0 0;">RSS AI Summarizer &amp; Dispatcher</p>'
+        '<div style="text-align: center; padding-bottom: 24px; border-bottom: 1px solid #e2e8f0; margin-bottom: 24px;">'
+        '<h1 style="font-family: \'Plus Jakarta Sans\', sans-serif; font-size: 1.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin: 0; color: #0f172a;">DigestHub</h1>'
+        '<p style="font-size: 0.85rem; color: #64748b; margin: 5px 0 0 0;">RSS AI Summarizer &amp; Dispatcher</p>'
         '</div>'
     )
     st.markdown(html_content, unsafe_allow_html=True)
@@ -488,7 +504,7 @@ def render_metric_card(label, value):
 
 def render_section_header(title):
     html_content = (
-        '<h2 style="font-family: \'Playfair Display\', serif; font-size: 1.8rem; margin-top: 10px; margin-bottom: 20px; color: #ffffff; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">'
+        '<h2 style="font-family: \'Plus Jakarta Sans\', sans-serif; font-size: 1.8rem; font-weight: 700; margin-top: 10px; margin-bottom: 20px; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">'
         f'{title}'
         '</h2>'
     )
@@ -533,7 +549,7 @@ def render_chat_empty_state(has_topic: bool):
         html_content = (
             '<div class="chat-empty-state">'
             '<div class="chat-empty-icon"></div>'
-            '<h3 style="color: #ffffff; margin-bottom: 8px;">Search a topic first</h3>'
+            '<h3 style="color: #0f172a; margin-bottom: 8px;">Search a topic first</h3>'
             '<p>Use the search bar above to find articles on a topic.<br>'
             'Then come back here to ask questions about them!</p>'
             '</div>'
@@ -542,7 +558,7 @@ def render_chat_empty_state(has_topic: bool):
         html_content = (
             '<div class="chat-empty-state">'
             '<div class="chat-empty-icon"></div>'
-            '<h3 style="color: #ffffff; margin-bottom: 8px;">Ask me anything!</h3>'
+            '<h3 style="color: #0f172a; margin-bottom: 8px;">Ask me anything!</h3>'
             '<p>I have the topic articles loaded as context.<br>'
             'Ask a question below to get started.</p>'
             '</div>'
@@ -556,7 +572,7 @@ def render_chat_empty_state(has_topic: bool):
 def render_category_card(badge, title, description, icon, is_selected, key):
     """Render category onboarding selection card styled like Screen 1 of reference image."""
     card_class = "category-item selected" if is_selected else "category-item"
-    border_style = "border: 2px solid #b55e2a;" if is_selected else ""
+    border_style = "border: 2px solid #004b87;" if is_selected else ""
     html_content = (
         f'<div class="{card_class}" style="{border_style}">'
         f'<div class="category-badge-pill">{badge}</div>'
@@ -602,9 +618,9 @@ def render_audio_player(title, source, pub_date_str, text_content=None):
     
     html_top = (
         '<div style="text-align: center; margin-bottom: 20px;">'
-        '<div style="background: linear-gradient(135deg, #153930, #b55e2a); height: 200px; border-radius: 20px; display: flex; align-items: center; justify-content: center; position: relative; box-shadow: 0 8px 25px rgba(0,0,0,0.2);">'
-        '<div style="font-size: 4rem; background: rgba(255,255,255,0.2); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); border: 2px solid white; transition: transform 0.2s;">AI</div>'
-        '<div style="position: absolute; bottom: 12px; left: 16px; font-size: 0.8rem; background: rgba(0,0,0,0.5); padding: 4px 10px; border-radius: 12px; color: white;">AI Voice Reader</div>'
+        '<div style="background: linear-gradient(135deg, #004b87, #1d4ed8); height: 200px; border-radius: 20px; display: flex; align-items: center; justify-content: center; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">'
+        '<div style="font-size: 4rem; background: rgba(255,255,255,0.2); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); border: 2px solid white; transition: transform 0.2s; color: white;">AI</div>'
+        '<div style="position: absolute; bottom: 12px; left: 16px; font-size: 0.8rem; background: rgba(0,0,0,0.5); padding: 4px 10px; border-radius: 12px; color: white; font-weight: 600;">AI Voice Reader</div>'
         '</div>'
         '</div>'
     )
@@ -622,7 +638,7 @@ def render_audio_player(title, source, pub_date_str, text_content=None):
         
         if clean_text:
             try:
-                st.markdown("<p style='text-align: center; font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-bottom: 5px;'>Click play below to listen to the AI Audio Summary</p>", unsafe_allow_html=True)
+                st.markdown("<p style='text-align: center; font-size: 0.85rem; color: #475569; margin-bottom: 5px;'>Click play below to listen to the AI Audio Summary</p>", unsafe_allow_html=True)
                 audio_bytes = generate_tts_audio_cached(clean_text)
                 st.audio(audio_bytes, format="audio/mp3")
                 st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
@@ -633,9 +649,9 @@ def render_audio_player(title, source, pub_date_str, text_content=None):
         '<div class="audio-player-box">'
         '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">'
         f'<span class="feed-card-badge">{source}</span>'
-        f'<span style="font-size: 0.75rem; color: rgba(255,255,255,0.6);">{pub_date_str}</span>'
+        f'<span style="font-size: 0.75rem; color: #64748b;">{pub_date_str}</span>'
         '</div>'
-        f'<h3 style="margin-top: 5px; margin-bottom: 15px; color: white !important; font-family: \'Playfair Display\', serif;">{title}</h3>'
+        f'<h3 style="margin-top: 5px; margin-bottom: 15px; color: #0f172a !important; font-family: \'Playfair Display\', serif;">{title}</h3>'
         '<div class="waveform-visualizer">'
         '<span class="duration-label">Active</span>'
         f'<div style="display: flex; gap: 3px; align-items: center; flex-grow: 1; justify-content: center; margin: 0 15px;">{bars_html}</div>'
@@ -764,7 +780,7 @@ def render_feed_article_card(a, index, current_format="TL;DR"):
         f'<h4 class="feed-card-title">{a["title"]}</h4>'
         f'<div class="feed-card-desc">{formatted_desc}</div>'
         '<div class="feed-card-footer">'
-        f'<a href="/?read={safe_id}" target="_blank" style="font-size: 0.8rem; color: #b55e2a; text-decoration: none; font-weight: 700;">Original Source Link</a>'
+        f'<a href="/?read={safe_id}" target="_blank" style="font-size: 0.8rem; color: #004b87; text-decoration: none; font-weight: 700;">Original Source Link</a>'
         '</div>'
         '</div>'
     )

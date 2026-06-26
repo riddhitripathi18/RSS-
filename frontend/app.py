@@ -538,8 +538,8 @@ st.markdown("<div style='margin-bottom: 24px;'></div>", unsafe_allow_html=True)
 if st.session_state.current_page == "categories":
     st.markdown('<div style="text-align: center; margin-bottom: 24px; margin-top: 20px;">', unsafe_allow_html=True)
     st.markdown('<h1 style="font-family: \'Playfair Display\', serif; font-size: 3rem; margin-bottom: 5px;">The News</h1>', unsafe_allow_html=True)
-    st.markdown('<h2 style="font-family: \'Plus Jakarta Sans\', sans-serif; font-size: 1.4rem; font-weight: 600; color: #b55e2a; margin-top: 0;">Choose Categories</h2>', unsafe_allow_html=True)
-    st.markdown('<p style="color: rgba(255, 255, 255, 0.7); font-size: 0.95rem;">Choose your favorite topics and personalize your news feed</p>', unsafe_allow_html=True)
+    st.markdown('<h2 style="font-family: \'Plus Jakarta Sans\', sans-serif; font-size: 1.4rem; font-weight: 600; color: #004b87; margin-top: 0;">Choose Categories</h2>', unsafe_allow_html=True)
+    st.markdown('<p style="color: #475569; font-size: 0.95rem;">Choose your favorite topics and personalize your news feed</p>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
     
     categories = [
@@ -594,7 +594,7 @@ elif st.session_state.current_page == "feed":
     with profile_col:
         st.markdown("""
         <div style="display: flex; justify-content: flex-end; align-items: center; height: 100%;">
-            <div style="width: 42px; height: 42px; border-radius: 50%; background: #b55e2a; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem; border: 2px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
+            <div style="width: 42px; height: 42px; border-radius: 50%; background: #004b87; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem; border: 2px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
                 U
             </div>
         </div>
@@ -623,17 +623,17 @@ elif st.session_state.current_page == "feed":
             overview_text = get_trending_overview_cached(engine, top_10)
         
         st.markdown(f"""
-        <div style="background: rgba(255,255,255,0.06);
-                    border: 1px solid rgba(255,255,255,0.1);
+        <div style="background: #ffffff;
+                    border: 1px solid #e2e8f0;
                     border-radius: 20px;
                     padding: 22px;
                     margin-top: 15px;
                     margin-bottom: 20px;
-                    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
                     font-size: 0.95rem;
-                    color: rgba(255,255,255,0.9);
+                    color: #1e293b;
                     line-height: 1.6;">
-            <h4 style="margin: 0 0 10px 0; color: #b55e2a; font-size: 1.25rem; display: flex; align-items: center; gap: 8px; font-family: 'Playfair Display', serif;">
+            <h4 style="margin: 0 0 10px 0; color: #004b87; font-size: 1.25rem; display: flex; align-items: center; gap: 8px; font-family: 'Playfair Display', serif;">
                 Trending: Last 24 Hours Overview
             </h4>
             {ui.format_to_html(overview_text)}
@@ -642,7 +642,7 @@ elif st.session_state.current_page == "feed":
 
     # Perspective Format Selection
     st.markdown("""
-    <div style='margin-bottom: 8px; font-size: 0.75rem; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700;'>
+    <div style='margin-bottom: 8px; font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700;'>
         📄 Perspective Mode
     </div>
     """, unsafe_allow_html=True)
@@ -658,8 +658,8 @@ elif st.session_state.current_page == "feed":
 
     # Category Pill Selection
     st.markdown("""
-    <div style='margin-top: 15px; margin-bottom: 8px; font-size: 0.75rem; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700;'>
-        📁 Personal Feed Filters
+    <div style='margin-top: 15px; margin-bottom: 8px; font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700;'>
+        📰 Personal Feed Filters
     </div>
     """, unsafe_allow_html=True)
     
@@ -767,9 +767,9 @@ elif st.session_state.current_page == "detail":
                     st.rerun()
                     
         st.markdown(f"""
-        <div style="background: rgba(255,255,255,0.06); border-radius: 20px; padding: 24px; border: 1px solid rgba(255,255,255,0.1); line-height: 1.6;">
-            <h4 style="margin-top:0; color:#b55e2a !important;">AI Generated Content ({st.session_state.summary_format})</h4>
-            <div style="color: rgba(255,255,255,0.9); font-size: 0.95rem;">{ui.format_to_html(text_to_display)}</div>
+        <div style="background: #ffffff; border-radius: 20px; padding: 24px; border: 1px solid #e2e8f0; line-height: 1.6; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+            <h4 style="margin-top:0; color:#004b87 !important; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700;">AI Generated Content ({st.session_state.summary_format})</h4>
+            <div style="color: #334155; font-size: 0.95rem;">{ui.format_to_html(text_to_display)}</div>
         </div>
         """, unsafe_allow_html=True)
         
@@ -912,7 +912,7 @@ elif st.session_state.current_page == "analytics":
             fig.update_layout(
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)',
-                font_color="#ffffff",
+                font_color="#1e293b",
                 legend=dict(orientation="h", y=-0.1)
             )
             st.plotly_chart(fig, use_container_width=True)
@@ -931,22 +931,22 @@ elif st.session_state.current_page == "analytics":
                 name='Unique Articles',
                 x=dup_by_source['Source'],
                 y=dup_by_source['Unique'],
-                marker_color='#b55e2a'
+                marker_color='#004b87'
             ))
             fig_bar.add_trace(go.Bar(
                 name='Duplicate Articles',
                 x=dup_by_source['Source'],
                 y=dup_by_source['Duplicate'],
-                marker_color='rgba(255,255,255,0.2)'
+                marker_color='#cbd5e1'
             ))
             fig_bar.update_layout(
                 barmode='stack',
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)',
-                font_color="#ffffff",
+                font_color="#1e293b",
                 legend=dict(orientation="h", y=-0.1),
-                xaxis=dict(gridcolor="rgba(255,255,255,0.05)"),
-                yaxis=dict(gridcolor="rgba(255,255,255,0.05)")
+                xaxis=dict(gridcolor="#e2e8f0"),
+                yaxis=dict(gridcolor="#e2e8f0")
             )
             st.plotly_chart(fig_bar, use_container_width=True)
 
