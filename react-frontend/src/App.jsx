@@ -16,6 +16,12 @@ function App() {
   const [activeArticle, setActiveArticle] = useState(null);
   const [summaryFormat, setSummaryFormat] = useState('TL;DR');
 
+  // Check and run pipeline if needed on startup
+  useEffect(() => {
+    fetch('http://localhost:8000/api/pipeline/check', { method: 'POST' })
+      .catch(e => console.error("Pipeline check failed:", e));
+  }, []);
+
   // Fetch articles from API
   const fetchArticles = async (category, query = '') => {
     setLoading(true);

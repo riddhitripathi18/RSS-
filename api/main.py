@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, Query, Request
+from fastapi import FastAPI, Depends, Query, Request, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from pydantic import BaseModel
@@ -16,6 +16,7 @@ if project_root not in sys.path:
 from core.database import init_db, get_session, Article
 from core.search import search_articles_by_topic, get_recent_articles
 from core.chatbot import ask_chatbot, generate_150_word_summary, generate_key_takeaways, generate_5ws_summary, generate_trending_overview
+from scripts.scheduler import run_daily_pipeline
 from gtts import gTTS
 import io
 
@@ -105,6 +106,32 @@ def article_to_dict(article):
 @app.get("/api/articles/recent")
 def recent_articles(limit: int = 30, days: int = 7):
     return get_recent_articles(engine, limit=limit, days=days)
+
+def check_and_run_pipeline():
+    session = get_session(engine)
+    try:
+        today = datetime.utcnow().date()
+        latest_article = session.query(Article).order_by(Article.fetched_date.desc()).first()
+        needs_update = False
+        if not latest_article:
+            needs_update = True
+        elif latest_article.fetched_date.date() < today:
+            needs_update = True
+            
+        if needs_update:
+            logger.info("Auto-triggering Daily News Pipeline...")
+            try:
+                run_daily_pipeline()
+                logger.info("Pipeline completed successfully.")
+            except Exception as e:
+                logger.error(f"Error running pipeline: {e}")
+    finally:
+        session.close()
+
+@app.post("/api/pipeline/check")
+def trigger_pipeline_check(background_tasks: BackgroundTasks):
+    background_tasks.add_task(check_and_run_pipeline)
+    return {"message": "Pipeline check initiated in background"}
 
 @app.get("/api/articles/search")
 def search_articles(keyword: str, limit: int = 30, days: int = 7):
