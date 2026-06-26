@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import FeedCard from './components/FeedCard';
 import ArticleDetail from './components/ArticleDetail';
+import ChatBot from './components/ChatBot';
+import TrendingWidget from './components/TrendingWidget';
 import './index.css';
 
 const API_BASE_URL = 'http://localhost:8000/api/articles';
@@ -12,6 +14,7 @@ function App() {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activeArticle, setActiveArticle] = useState(null);
+  const [summaryFormat, setSummaryFormat] = useState('TL;DR');
 
   // Fetch articles from API
   const fetchArticles = async (category, query = '') => {
@@ -50,14 +53,31 @@ function App() {
     fetchArticles(activeCategory, searchQuery);
   };
 
-  const handleArticleClick = async (article) => {
-    // Fetch full details (and trigger click_count increment)
+  const loadFormattedArticle = async (article, format) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/${article.id}`);
-      const fullArticle = await response.json();
-      setActiveArticle(fullArticle);
+      const res = await fetch('http://localhost:8000/api/articles/summarize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ article_id: article.id, format: format })
+      });
+      const data = await res.json();
+      return data;
     } catch(err) {
-      setActiveArticle(article); // fallback
+      console.error(err);
+      return article;
+    }
+  };
+
+  const handleArticleClick = async (article) => {
+    const formatted = await loadFormattedArticle(article, summaryFormat);
+    setActiveArticle(formatted);
+  };
+
+  const handleFormatChange = async (format) => {
+    setSummaryFormat(format);
+    if (activeArticle) {
+      const formatted = await loadFormattedArticle(activeArticle, format);
+      setActiveArticle(formatted);
     }
   };
 
@@ -89,6 +109,31 @@ function App() {
               </form>
             </div>
 
+            {/* Trending Overview */}
+            {activeCategory === 'All' && !searchQuery && (
+              <TrendingWidget onArticleClick={handleArticleClick} />
+            )}
+
+            {/* Format Selection for Feed */}
+            <div style={{ marginBottom: '20px', display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 700 }}>📄 Perspective Mode:</span>
+              {['TL;DR', 'Bullets', '5 Ws'].map(f => (
+                <button 
+                  key={f}
+                  onClick={() => handleFormatChange(f)}
+                  style={{
+                    padding: '6px 12px', borderRadius: 'var(--radius-md)', fontSize: '0.85rem',
+                    backgroundColor: summaryFormat === f ? 'var(--primary)' : 'var(--surface)',
+                    color: summaryFormat === f ? 'white' : 'var(--text-main)',
+                    border: `1px solid ${summaryFormat === f ? 'var(--primary)' : 'var(--border)'}`,
+                    cursor: 'pointer', fontWeight: 600, transition: 'var(--transition)'
+                  }}
+                >
+                  {f === 'Bullets' ? '⚡ Key Takeaways' : f === '5 Ws' ? '❓ 5 Ws Analysis' : '📄 TL;DR Summary'}
+                </button>
+              ))}
+            </div>
+
             {loading ? (
               <p>Loading the latest news...</p>
             ) : articles.length > 0 ? (
@@ -97,6 +142,7 @@ function App() {
                   <FeedCard 
                     key={article.id} 
                     article={article} 
+                    format={summaryFormat}
                     onClick={handleArticleClick}
                   />
                 ))}
@@ -108,10 +154,15 @@ function App() {
         ) : (
           <ArticleDetail 
             article={activeArticle} 
+            format={summaryFormat}
+            onFormatChange={handleFormatChange}
             onBack={() => setActiveArticle(null)} 
           />
         )}
       </main>
+
+      {/* Floating Chatbot */}
+      <ChatBot activeArticle={activeArticle} />
     </div>
   );
 }

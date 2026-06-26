@@ -7,13 +7,21 @@ function formatText(text) {
   return { __html: formatted };
 }
 
-export default function FeedCard({ article, onClick }) {
+export default function FeedCard({ article, format, onClick }) {
   const date = new Date(article.published_date).toLocaleDateString('en-US', {
     month: 'short', day: 'numeric', year: 'numeric'
   });
   
-  // Decide which text to show
-  let displayText = article.five_ws_content || article.bullets_content || article.description || article.content.substring(0, 150) + "...";
+  // Decide which text to show based on format
+  let displayText = article.description || article.content.substring(0, 150) + "...";
+  if (format === "Bullets" && article.bullets_content) {
+    displayText = article.bullets_content;
+  } else if (format === "5 Ws" && article.five_ws_content) {
+    displayText = article.five_ws_content;
+  } else if (format === "TL;DR" && article.content) {
+    displayText = article.content;
+  }
+
   if (displayText && displayText.length > 250) {
     displayText = displayText.substring(0, 250) + "...";
   }
