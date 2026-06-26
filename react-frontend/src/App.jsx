@@ -28,14 +28,11 @@ function App() {
     setLoading(true);
     try {
       let url;
-      let searchTerm = query;
       
-      if (!searchTerm && category !== 'All') {
-        searchTerm = category;
-      }
-
-      if (searchTerm) {
-        url = `${API_BASE_URL}/search?keyword=${encodeURIComponent(searchTerm)}&limit=30`;
+      if (query) {
+        url = `${API_BASE_URL}/search?keyword=${encodeURIComponent(query)}&limit=30`;
+      } else if (category && category !== 'All') {
+        url = `http://localhost:8000/api/articles/category/${encodeURIComponent(category)}?limit=30`;
       } else {
         url = `${API_BASE_URL}/recent?limit=30`;
       }

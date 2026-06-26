@@ -101,6 +101,87 @@ def article_to_dict(article):
         "click_count": article.click_count or 0,
     }
 
+def filter_articles_by_category(articles_dicts, category):
+    if not category or category == "All" or category == "Updated":
+        return articles_dicts
+    filtered = []
+    category_lower = category.lower()
+    for a in articles_dicts:
+        title = (a.get("title") or "").lower()
+        title_words = set(re.findall(r'\b[a-z0-9]+\b', title))
+        
+        if category_lower == "politics":
+            politics_keywords = {
+                "politics", "government", "biden", "zelensky", "minister", "election", "senate", 
+                "congress", "parliament", "political", "governor", "president", "putin", "kremlin", 
+                "democracy", "republican", "democrat", "elections", "cabinet", "pm", "modi", "bjp", 
+                "mp", "mla", "opposition", "ruling", "sanctions", "ambassador", "gandhi", "trump",
+                "court", "defamation"
+            }
+            if politics_keywords.intersection(title_words):
+                filtered.append(a)
+                
+        elif category_lower == "technology":
+            tech_keywords = {
+                "technology", "tech", "ai", "software", "nvidia", "apple", "google", "microsoft", 
+                "intel", "amd", "semiconductor", "semiconductors", "microchips", "chips", "hacker", 
+                "cybersecurity", "cyberattack", "robot", "robotics", "quantum", "openai", "telecom", 
+                "iphone", "smartphones", "cryptocurrency", "blockchain", "metaverse", "data", "digital", 
+                "devices", "device", "science", "scientific", "innovation", "innovations", "telecommunication"
+            }
+            if tech_keywords.intersection(title_words):
+                filtered.append(a)
+                
+        elif category_lower == "sports":
+            sports_keywords = {
+                "sports", "cricket", "football", "match", "game", "olympic", "olympics", "cup", 
+                "tennis", "championship", "tournament", "soccer", "basketball", "baseball", "golf", 
+                "wimbledon", "f1", "racing", "athletics", "ipl", "fifa", "stadium", "league", "wicket",
+                "player", "coach", "batsman"
+            }
+            if sports_keywords.intersection(title_words):
+                filtered.append(a)
+                
+        elif category_lower == "international":
+            intl_keywords = {
+                "world", "global", "ukraine", "china", "russia", "israel", "gaza", "international", 
+                "nato", "un", "syria", "taiwan", "brexit", "nuclear", "war", "pope", "embassy", 
+                "refugees", "migration", "bilateral", "summit", "diplomatic", "treaty", "foreign",
+                "us", "usa", "uk", "london", "paris", "tokyo", "beijing", "moscow", "washington", "iran", 
+                "korea", "german", "germany", "france", "french", "europe", "european", "asia", "asian", 
+                "africa", "african", "american", "america", "switzerland", "swiss", "dutch", "netherlands", 
+                "spain", "spanish", "italy", "italian", "canada", "canadian", "mexico", "brazil", "australia", 
+                "australian", "philippines", "seoul", "kyiv", "chornobyl", "turkey", "turkish", "egypt", 
+                "pakistan", "afghanistan", "iraq", "saudi", "yemen", "singapore", "malaysia", "indonesia", 
+                "thailand", "vietnam", "sweden", "norway", "norwegian", "denmark", "finland", "poland", 
+                "ukrainian", "russian", "chinese", "british", "melbourne", "vancouver", "toronto"
+            }
+            if intl_keywords.intersection(title_words):
+                filtered.append(a)
+                
+        elif category_lower == "stock market":
+            market_keywords = {
+                "stock", "stocks", "shares", "share", "nasdaq", "dow", "sp", "nifty", "sensex", "bse", 
+                "nse", "ipo", "earnings", "dividend", "dividends", "yield", "yields", "securities", 
+                "equities", "equity", "valuation", "investing", "investment", "investments", "investor", 
+                "investors", "wallstreet", "ticker", "tickers", "trading", "broker", "brokerage", "index", 
+                "bull", "bear", "portfolio", "portfolios", "marketwatch", "moneycontrol", "bloomberg"
+            }
+            if market_keywords.intersection(title_words):
+                filtered.append(a)
+                
+        elif category_lower == "media":
+            media_keywords = {
+                "media", "news", "press", "journalism", "journalist", "journalists", "broadcast", 
+                "broadcasting", "television", "tv", "radio", "newspaper", "newspapers", "reporting", 
+                "reporter", "reporters", "social", "facebook", "twitter", "instagram", "tiktok", "youtube", 
+                "streaming", "netflix", "disney", "warnermedia", "studios", "studio", "reuters", "nbc", 
+                "bbc", "cnn", "nytimes"
+            }
+            if media_keywords.intersection(title_words):
+                filtered.append(a)
+    return filtered
+
 # --- Endpoints ---
 
 @app.get("/api/articles/recent")
@@ -136,6 +217,12 @@ def trigger_pipeline_check(background_tasks: BackgroundTasks):
 @app.get("/api/articles/search")
 def search_articles(keyword: str, limit: int = 30, days: int = 7):
     return search_articles_by_topic(engine, keyword=keyword, limit=limit, days=days)
+
+@app.get("/api/articles/category/{category}")
+def category_articles(category: str, limit: int = 100, days: int = 7):
+    recent = get_recent_articles(engine, limit=1000, days=days)
+    filtered = filter_articles_by_category(recent, category)
+    return filtered[:limit]
 
 @app.get("/api/articles/{article_id}")
 def get_article(article_id: int):

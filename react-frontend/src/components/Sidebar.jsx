@@ -2,13 +2,12 @@ import React from 'react';
 
 const CATEGORIES = [
   "All",
+  "Politics",
   "Technology",
-  "Business",
-  "World",
-  "Science",
-  "Health",
-  "Entertainment",
-  "Sports"
+  "Sports",
+  "International",
+  "Media",
+  "Stock Market"
 ];
 
 export default function Sidebar({ activeCategory, onCategoryChange, onSearch }) {
