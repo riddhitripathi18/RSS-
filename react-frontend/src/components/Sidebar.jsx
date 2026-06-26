@@ -14,7 +14,7 @@ const CATEGORIES = [
 export default function Sidebar({ activeCategory, onCategoryChange, onSearch }) {
   return (
     <aside className="sidebar">
-      <h1>📰 NewsDigest</h1>
+      <h1 style={{ letterSpacing: '0.1em' }}>NEWS DIGEST</h1>
       
       <div className="category-list">
         {CATEGORIES.map(category => (

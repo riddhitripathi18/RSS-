@@ -4,6 +4,7 @@ import FeedCard from './components/FeedCard';
 import ArticleDetail from './components/ArticleDetail';
 import ChatBot from './components/ChatBot';
 import TrendingWidget from './components/TrendingWidget';
+import HeroHeadlines from './components/HeroHeadlines';
 import './index.css';
 
 const API_BASE_URL = 'http://localhost:8000/api/articles';
@@ -143,16 +144,34 @@ function App() {
             {loading ? (
               <p>Loading the latest news...</p>
             ) : articles.length > 0 ? (
-              <div className="feed-grid">
-                {articles.map(article => (
-                  <FeedCard 
-                    key={article.id} 
-                    article={article} 
-                    format={summaryFormat}
-                    onClick={handleArticleClick}
+              <>
+                {/* Magazine Hero Section */}
+                {activeCategory === 'All' && !searchQuery && articles.length >= 5 && (
+                  <HeroHeadlines 
+                    articles={articles.slice(0, 5)} 
+                    onClick={handleArticleClick} 
                   />
-                ))}
-              </div>
+                )}
+                
+                {/* Standard Feed Grid */}
+                {activeCategory === 'All' && !searchQuery && articles.length >= 5 && (
+                  <div style={{ marginTop: '2rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <h3 style={{ fontSize: '1.5rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--primary)' }}>World News</h3>
+                    <div style={{ flex: 1, height: '2px', backgroundColor: 'var(--primary)', opacity: 0.2 }}></div>
+                  </div>
+                )}
+                
+                <div className="feed-grid">
+                  {(activeCategory === 'All' && !searchQuery && articles.length >= 5 ? articles.slice(5) : articles).map(article => (
+                    <FeedCard 
+                      key={article.id} 
+                      article={article} 
+                      format={summaryFormat}
+                      onClick={handleArticleClick}
+                    />
+                  ))}
+                </div>
+              </>
             ) : (
               <p>No articles found for this category or search.</p>
             )}
