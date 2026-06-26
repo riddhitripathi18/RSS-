@@ -101,6 +101,7 @@ export default function ArticleDetail({ article, format, onFormatChange, onBack 
           <h3>✨ AI Generated Content ({format})</h3>
           <div 
             className="formatted-content"
+            style={{ whiteSpace: 'pre-line', lineHeight: '1.6' }}
             dangerouslySetInnerHTML={formatText(displayText)}
           />
         </div>

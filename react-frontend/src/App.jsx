@@ -114,7 +114,7 @@ function App() {
             </div>
 
             {/* Simple Headlines Banner & Trending Overview */}
-            {activeCategory === 'All' && !searchQuery && (
+            {!searchQuery && (
               <>
                 <HeroHeadlines />
                 <TrendingWidget onArticleClick={handleArticleClick} />
