@@ -116,9 +116,12 @@ function App() {
               </form>
             </div>
 
-            {/* Trending Overview */}
+            {/* Simple Headlines Banner & Trending Overview */}
             {activeCategory === 'All' && !searchQuery && (
-              <TrendingWidget onArticleClick={handleArticleClick} />
+              <>
+                <HeroHeadlines />
+                <TrendingWidget onArticleClick={handleArticleClick} />
+              </>
             )}
 
             {/* Format Selection for Feed */}
@@ -144,34 +147,16 @@ function App() {
             {loading ? (
               <p>Loading the latest news...</p>
             ) : articles.length > 0 ? (
-              <>
-                {/* Magazine Hero Section */}
-                {activeCategory === 'All' && !searchQuery && articles.length >= 5 && (
-                  <HeroHeadlines 
-                    articles={articles.slice(0, 5)} 
-                    onClick={handleArticleClick} 
+              <div className="feed-grid">
+                {articles.map(article => (
+                  <FeedCard 
+                    key={article.id} 
+                    article={article} 
+                    format={summaryFormat}
+                    onClick={handleArticleClick}
                   />
-                )}
-                
-                {/* Standard Feed Grid */}
-                {activeCategory === 'All' && !searchQuery && articles.length >= 5 && (
-                  <div style={{ marginTop: '2rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <h3 style={{ fontSize: '1.5rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--primary)' }}>World News</h3>
-                    <div style={{ flex: 1, height: '2px', backgroundColor: 'var(--primary)', opacity: 0.2 }}></div>
-                  </div>
-                )}
-                
-                <div className="feed-grid">
-                  {(activeCategory === 'All' && !searchQuery && articles.length >= 5 ? articles.slice(5) : articles).map(article => (
-                    <FeedCard 
-                      key={article.id} 
-                      article={article} 
-                      format={summaryFormat}
-                      onClick={handleArticleClick}
-                    />
-                  ))}
-                </div>
-              </>
+                ))}
+              </div>
             ) : (
               <p>No articles found for this category or search.</p>
             )}
